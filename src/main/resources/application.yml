@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: hospital
+  thymeleaf:
+    cache: false
+
+server:
+  port: 8080
+
+hospital:
+  rdf:
+    base-uri: "http://example.org/hospital#"
