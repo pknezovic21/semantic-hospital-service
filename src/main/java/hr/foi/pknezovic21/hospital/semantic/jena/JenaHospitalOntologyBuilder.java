@@ -50,6 +50,8 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         ontClass(model, "Department", "Department", unit);
         OntClass.Named staffMember = ontClass(model, "StaffMember", "Staff member");
         OntClass.Named equipment = ontClass(model, "Equipment", "Equipment");
+        OntClass.Named equipmentType = ontClass(model, "EquipmentType", "Equipment type");
+        OntClass.Named equipmentRequest = ontClass(model, "EquipmentRequest", "Equipment request");
         OntClass.Named equipmentStatus = ontClass(model, "EquipmentStatus", "Equipment status");
 
         hospital.addDisjointClass(unit);
@@ -60,10 +62,15 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "managedBy", "Managed by", unit, staffMember);
         objectProperty(model, "assignedTo", "Assigned to", equipment, unit);
         objectProperty(model, "hasEquipmentStatus", "Has equipment status", equipment, equipmentStatus);
+        objectProperty(model, "hasEquipmentType", "Has equipment type", equipment, equipmentType);
+        objectProperty(model, "requestsType", "Requests type", equipmentRequest, equipmentType);
+        objectProperty(model, "requestedFor", "Requested for", equipmentRequest, unit);
+        objectProperty(model, "availableCandidate", "Available candidate", equipmentRequest, equipment);
 
         OntDataRange.Named string = model.createDatatype(XSD.xstring.getURI());
         dataProperty(model, "name", "Name", model.getOWLThing(), string);
         dataProperty(model, "assetNumber", "Asset number", equipment, string);
+        dataProperty(model, "requestNumber", "Request number", equipmentRequest, string);
 
         individual(model, "Available", "Available", equipmentStatus);
         individual(model, "InMaintenance", "In maintenance", equipmentStatus);
