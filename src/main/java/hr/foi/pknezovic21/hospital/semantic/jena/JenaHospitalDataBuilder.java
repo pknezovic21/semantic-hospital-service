@@ -50,12 +50,72 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "StaffMember",
                 "Equipment library coordinator"
         );
-        individual(model, "Equipment001", "Equipment", "Volumetric infusion pump")
-                .addLiteral(property("assetNumber"), "INF-001")
-                .addProperty(property("assignedTo"), equipmentLibrary)
-                .addProperty(property("hasEquipmentStatus"), resource("Available"));
+        Resource infusionPumpType = equipmentType(model, "InfusionPumpType", "Infusion pump");
+        Resource patientMonitorType = equipmentType(model, "PatientMonitorType", "Patient monitor");
+        equipment(
+                model,
+                "Equipment001",
+                "Volumetric infusion pump",
+                "INF-001",
+                infusionPumpType,
+                equipmentLibrary,
+                resource("Available")
+        );
+        equipment(
+                model,
+                "Equipment002",
+                "Volumetric infusion pump",
+                "INF-002",
+                infusionPumpType,
+                equipmentLibrary,
+                resource("InMaintenance")
+        );
+        equipment(
+                model,
+                "Equipment003",
+                "Patient monitor",
+                "MON-001",
+                patientMonitorType,
+                medicine,
+                resource("Available")
+        );
+        equipmentRequest(model, "EquipmentRequest001", "REQ-001", medicine, infusionPumpType);
+        equipmentRequest(model, "EquipmentRequest002", "REQ-002", medicine, patientMonitorType);
 
         equipmentLibrary.addProperty(property("managedBy"), coordinator);
+    }
+
+    private Resource equipmentType(Model model, String id, String name) {
+        return individual(model, id, "EquipmentType", name);
+    }
+
+    private Resource equipment(
+            Model model,
+            String id,
+            String name,
+            String assetNumber,
+            Resource equipmentType,
+            Resource assignedTo,
+            Resource status
+    ) {
+        return individual(model, id, "Equipment", name)
+                .addLiteral(property("assetNumber"), assetNumber)
+                .addProperty(property("hasEquipmentType"), equipmentType)
+                .addProperty(property("assignedTo"), assignedTo)
+                .addProperty(property("hasEquipmentStatus"), status);
+    }
+
+    private Resource equipmentRequest(
+            Model model,
+            String id,
+            String requestNumber,
+            Resource requestedFor,
+            Resource requestsType
+    ) {
+        return individual(model, id, "EquipmentRequest", requestNumber)
+                .addLiteral(property("requestNumber"), requestNumber)
+                .addProperty(property("requestedFor"), requestedFor)
+                .addProperty(property("requestsType"), requestsType);
     }
 
     private Resource unit(Model model, Resource parent, String id, String type, String name) {

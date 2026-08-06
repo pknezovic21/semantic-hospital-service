@@ -1,11 +1,21 @@
 package hr.foi.pknezovic21.hospital.presentation;
 
+import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
+import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.service.HospitalService;
+import java.net.URI;
 import java.util.List;
+import java.util.Map;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -26,5 +36,22 @@ public class HospitalRestController {
     @GetMapping("/equipment")
     public List<EquipmentSummary> equipment() {
         return hospitalService.equipment();
+    }
+
+    @GetMapping("/requests")
+    public List<EquipmentRequestSummary> requests() {
+        return hospitalService.equipmentRequests();
+    }
+
+    @PostMapping("/requests")
+    public ResponseEntity<CreatedResourceResponse> createRequest(@RequestBody EquipmentRequestForm form) {
+        String id = hospitalService.createEquipmentRequest(form);
+        return ResponseEntity.created(URI.create("/api/requests/" + id)).body(new CreatedResourceResponse(id));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, String> invalidRequest(IllegalArgumentException exception) {
+        return Map.of("message", exception.getMessage());
     }
 }

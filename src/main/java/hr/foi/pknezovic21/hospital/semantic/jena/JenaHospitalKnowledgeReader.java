@@ -65,13 +65,15 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-                SELECT ?equipment ?name ?assetNumber ?status ?unit ?unitName
+                SELECT ?equipment ?name ?assetNumber ?equipmentTypeName ?status ?unit ?unitName
                 WHERE {
                   ?equipment rdf:type hospital:Equipment ;
                              hospital:name ?name ;
                              hospital:assetNumber ?assetNumber ;
+                             hospital:hasEquipmentType ?equipmentType ;
                              hospital:hasEquipmentStatus ?status ;
                              hospital:assignedTo ?unit .
+                  ?equipmentType hospital:name ?equipmentTypeName .
                   ?unit hospital:name ?unitName .
                 }
                 ORDER BY ?assetNumber
@@ -86,6 +88,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             localName(row.getResource("equipment")),
                             literal(row, "name"),
                             literal(row, "assetNumber"),
+                            literal(row, "equipmentTypeName"),
                             localName(row.getResource("status")),
                             localName(row.getResource("unit")),
                             literal(row, "unitName")
