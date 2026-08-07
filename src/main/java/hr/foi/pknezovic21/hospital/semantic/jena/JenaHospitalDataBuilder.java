@@ -36,7 +36,11 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
     private void seed(Model model) {
         Resource hospital = individual(model, "CentralTeachingHospital", "Hospital", "Central Teaching Hospital");
         Resource medicine = unit(model, hospital, "MedicineDivision", "ClinicalDivision", "Medicine");
-        unit(model, medicine, "EmergencyDepartment", "Department", "Emergency Department");
+        Resource surgery = unit(model, hospital, "SurgeryDivision", "ClinicalDivision", "Surgery");
+        Resource clinicalSupport = unit(model, hospital, "ClinicalSupportDivision", "ClinicalDivision", "Clinical Support");
+        Resource emergency = unit(model, medicine, "EmergencyDepartment", "Department", "Emergency Department");
+        Resource criticalCare = unit(model, medicine, "CriticalCareUnit", "Department", "Critical Care Unit");
+        Resource imaging = unit(model, clinicalSupport, "ImagingDepartment", "Department", "Imaging Department");
         Resource equipmentLibrary = unit(
                 model,
                 hospital,
@@ -52,6 +56,10 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
         );
         Resource infusionPumpType = equipmentType(model, "InfusionPumpType", "Infusion pump");
         Resource patientMonitorType = equipmentType(model, "PatientMonitorType", "Patient monitor");
+        Resource syringePumpType = equipmentType(model, "SyringePumpType", "Syringe pump");
+        Resource ultrasoundScannerType = equipmentType(model, "UltrasoundScannerType", "Ultrasound scanner");
+        Resource ecgMonitorType = equipmentType(model, "EcgMonitorType", "ECG monitor");
+        Resource bladderScannerType = equipmentType(model, "BladderScannerType", "Bladder scanner");
         equipment(
                 model,
                 "Equipment001",
@@ -77,6 +85,69 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "MON-001",
                 patientMonitorType,
                 medicine,
+                resource("Available")
+        );
+        equipment(
+                model,
+                "Equipment004",
+                "Syringe pump",
+                "SYR-001",
+                syringePumpType,
+                criticalCare,
+                resource("Available")
+        );
+        equipment(
+                model,
+                "Equipment005",
+                "Syringe pump",
+                "SYR-002",
+                syringePumpType,
+                emergency,
+                resource("InMaintenance")
+        );
+        equipment(
+                model,
+                "Equipment006",
+                "Ultrasound scanner",
+                "US-001",
+                ultrasoundScannerType,
+                imaging,
+                resource("Available")
+        );
+        equipment(
+                model,
+                "Equipment007",
+                "ECG monitor",
+                "ECG-001",
+                ecgMonitorType,
+                emergency,
+                resource("Available")
+        );
+        equipment(
+                model,
+                "Equipment008",
+                "Bladder scanner",
+                "BLD-001",
+                bladderScannerType,
+                equipmentLibrary,
+                resource("Available")
+        );
+        equipment(
+                model,
+                "Equipment009",
+                "Patient monitor",
+                "MON-002",
+                patientMonitorType,
+                criticalCare,
+                resource("InMaintenance")
+        );
+        equipment(
+                model,
+                "Equipment010",
+                "Volumetric infusion pump",
+                "INF-003",
+                infusionPumpType,
+                surgery,
                 resource("Available")
         );
         equipmentRequest(model, "EquipmentRequest001", "REQ-001", medicine, infusionPumpType);
