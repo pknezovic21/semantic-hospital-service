@@ -1,5 +1,6 @@
 package hr.foi.pknezovic21.hospital.presentation;
 
+import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,8 +36,12 @@ public class HospitalRestController {
     }
 
     @GetMapping("/equipment")
-    public List<EquipmentSummary> equipment() {
-        return hospitalService.equipment();
+    public List<EquipmentSummary> equipment(
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, name = "type") String typeId,
+            @RequestParam(required = false, name = "unit") String unitId
+    ) {
+        return hospitalService.equipment(new EquipmentFilter(status, typeId, unitId));
     }
 
     @GetMapping("/requests")
