@@ -4,7 +4,9 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
+import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalRequestWriter;
@@ -19,15 +21,18 @@ public class HospitalService {
     private final HospitalKnowledgeReader knowledgeReader;
     private final HospitalInferenceReader inferenceReader;
     private final HospitalRequestWriter requestWriter;
+    private final HospitalEquipmentWriter equipmentWriter;
 
     public HospitalService(
             HospitalKnowledgeReader knowledgeReader,
             HospitalInferenceReader inferenceReader,
-            HospitalRequestWriter requestWriter
+            HospitalRequestWriter requestWriter,
+            HospitalEquipmentWriter equipmentWriter
     ) {
         this.knowledgeReader = knowledgeReader;
         this.inferenceReader = inferenceReader;
         this.requestWriter = requestWriter;
+        this.equipmentWriter = equipmentWriter;
     }
 
     public List<UnitSummary> organizationUnits() {
@@ -54,6 +59,15 @@ public class HospitalService {
         String requestNumber = "REQ-" + suffix;
         requestWriter.addEquipmentRequest(id, requestNumber, form);
         return id;
+    }
+
+    public void changeEquipmentStatus(String equipmentId, EquipmentStatusForm form) {
+        requireText(equipmentId, "Equipment is required.");
+        if (form == null) {
+            throw new IllegalArgumentException("Equipment status is required.");
+        }
+        requireText(form.statusId(), "Equipment status is required.");
+        equipmentWriter.changeEquipmentStatus(equipmentId.trim(), form.statusId().trim());
     }
 
     private void requireText(String value, String message) {
