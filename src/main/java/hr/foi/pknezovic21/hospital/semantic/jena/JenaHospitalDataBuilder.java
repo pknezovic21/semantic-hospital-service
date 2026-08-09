@@ -1,6 +1,7 @@
 package hr.foi.pknezovic21.hospital.semantic.jena;
 
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalDataBuilder;
+import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
@@ -69,7 +70,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 equipmentLibrary,
                 resource("Available")
         );
-        equipment(
+        Resource infusionPumpInMaintenance = equipment(
                 model,
                 "Equipment002",
                 "Volumetric infusion pump",
@@ -96,7 +97,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 criticalCare,
                 resource("Available")
         );
-        equipment(
+        Resource syringePumpInMaintenance = equipment(
                 model,
                 "Equipment005",
                 "Syringe pump",
@@ -132,7 +133,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 equipmentLibrary,
                 resource("Available")
         );
-        equipment(
+        Resource patientMonitorInMaintenance = equipment(
                 model,
                 "Equipment009",
                 "Patient monitor",
@@ -152,6 +153,30 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
         );
         equipmentRequest(model, "EquipmentRequest001", "REQ-001", medicine, infusionPumpType);
         equipmentRequest(model, "EquipmentRequest002", "REQ-002", medicine, patientMonitorType);
+        maintenanceRecord(
+                model,
+                "MaintenanceRecord001",
+                "MNT-001",
+                infusionPumpInMaintenance,
+                "Battery replacement",
+                "2026-08-01T09:30:00Z"
+        );
+        maintenanceRecord(
+                model,
+                "MaintenanceRecord002",
+                "MNT-002",
+                syringePumpInMaintenance,
+                "Preventive check",
+                "2026-08-02T11:15:00Z"
+        );
+        maintenanceRecord(
+                model,
+                "MaintenanceRecord003",
+                "MNT-003",
+                patientMonitorInMaintenance,
+                "Display issue",
+                "2026-08-03T14:00:00Z"
+        );
 
         equipmentLibrary.addProperty(property("managedBy"), coordinator);
     }
@@ -187,6 +212,21 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 .addLiteral(property("requestNumber"), requestNumber)
                 .addProperty(property("requestedFor"), requestedFor)
                 .addProperty(property("requestsType"), requestsType);
+    }
+
+    private Resource maintenanceRecord(
+            Model model,
+            String id,
+            String maintenanceNumber,
+            Resource equipment,
+            String reason,
+            String reportedAt
+    ) {
+        return individual(model, id, "MaintenanceRecord", maintenanceNumber)
+                .addLiteral(property("maintenanceNumber"), maintenanceNumber)
+                .addProperty(property("maintenanceFor"), equipment)
+                .addLiteral(property("maintenanceReason"), reason)
+                .addLiteral(property("reportedAt"), model.createTypedLiteral(reportedAt, XSDDatatype.XSDdateTime));
     }
 
     private Resource unit(Model model, Resource parent, String id, String type, String name) {

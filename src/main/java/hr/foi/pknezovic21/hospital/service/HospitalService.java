@@ -5,11 +5,15 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
+import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
+import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
+import hr.foi.pknezovic21.hospital.semantic.api.HospitalMaintenanceWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalRequestWriter;
+import java.time.Instant;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -22,17 +26,20 @@ public class HospitalService {
     private final HospitalInferenceReader inferenceReader;
     private final HospitalRequestWriter requestWriter;
     private final HospitalEquipmentWriter equipmentWriter;
+    private final HospitalMaintenanceWriter maintenanceWriter;
 
     public HospitalService(
             HospitalKnowledgeReader knowledgeReader,
             HospitalInferenceReader inferenceReader,
             HospitalRequestWriter requestWriter,
-            HospitalEquipmentWriter equipmentWriter
+            HospitalEquipmentWriter equipmentWriter,
+            HospitalMaintenanceWriter maintenanceWriter
     ) {
         this.knowledgeReader = knowledgeReader;
         this.inferenceReader = inferenceReader;
         this.requestWriter = requestWriter;
         this.equipmentWriter = equipmentWriter;
+        this.maintenanceWriter = maintenanceWriter;
     }
 
     public List<UnitSummary> organizationUnits() {
@@ -68,6 +75,24 @@ public class HospitalService {
         }
         requireText(form.statusId(), "Equipment status is required.");
         equipmentWriter.changeEquipmentStatus(equipmentId.trim(), form.statusId().trim());
+    }
+
+    public List<MaintenanceRecordSummary> maintenanceRecords() {
+        return knowledgeReader.maintenanceRecords();
+    }
+
+    public String createMaintenanceRecord(MaintenanceRecordForm form) {
+        if (form == null) {
+            throw new IllegalArgumentException("Maintenance record is required.");
+        }
+        requireText(form.equipmentId(), "Equipment is required.");
+        requireText(form.reason(), "Maintenance reason is required.");
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        String id = "MaintenanceRecord-" + suffix;
+        String maintenanceNumber = "MNT-" + suffix;
+        MaintenanceRecordForm cleanForm = new MaintenanceRecordForm(form.equipmentId().trim(), form.reason().trim());
+        maintenanceWriter.addMaintenanceRecord(id, maintenanceNumber, Instant.now().toString(), cleanForm);
+        return id;
     }
 
     private void requireText(String value, String message) {
