@@ -5,6 +5,8 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
+import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
+import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.service.HospitalService;
 import java.net.URI;
@@ -62,6 +64,17 @@ public class HospitalRestController {
     public ResponseEntity<CreatedResourceResponse> createRequest(@RequestBody EquipmentRequestForm form) {
         String id = hospitalService.createEquipmentRequest(form);
         return ResponseEntity.created(URI.create("/api/requests/" + id)).body(new CreatedResourceResponse(id));
+    }
+
+    @GetMapping("/maintenance")
+    public List<MaintenanceRecordSummary> maintenanceRecords() {
+        return hospitalService.maintenanceRecords();
+    }
+
+    @PostMapping("/maintenance")
+    public ResponseEntity<CreatedResourceResponse> createMaintenanceRecord(@RequestBody MaintenanceRecordForm form) {
+        String id = hospitalService.createMaintenanceRecord(form);
+        return ResponseEntity.created(URI.create("/api/maintenance/" + id)).body(new CreatedResourceResponse(id));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
