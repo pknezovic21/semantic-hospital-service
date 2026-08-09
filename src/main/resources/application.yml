@@ -10,3 +10,4 @@ server:
 hospital:
   rdf:
     base-uri: "http://example.org/hospital#"
+    storage-path: "data/hospital-tdb2"
