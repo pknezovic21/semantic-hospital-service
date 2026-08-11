@@ -1,6 +1,8 @@
 package hr.foi.pknezovic21.hospital.presentation;
 
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
@@ -64,6 +66,17 @@ public class HospitalRestController {
     public ResponseEntity<CreatedResourceResponse> createRequest(@RequestBody EquipmentRequestForm form) {
         String id = hospitalService.createEquipmentRequest(form);
         return ResponseEntity.created(URI.create("/api/requests/" + id)).body(new CreatedResourceResponse(id));
+    }
+
+    @GetMapping("/loans")
+    public List<EquipmentLoanSummary> equipmentLoans() {
+        return hospitalService.equipmentLoans();
+    }
+
+    @PostMapping("/loans")
+    public ResponseEntity<CreatedResourceResponse> createEquipmentLoan(@RequestBody EquipmentLoanForm form) {
+        String id = hospitalService.createEquipmentLoan(form);
+        return ResponseEntity.created(URI.create("/api/loans/" + id)).body(new CreatedResourceResponse(id));
     }
 
     @GetMapping("/maintenance")
