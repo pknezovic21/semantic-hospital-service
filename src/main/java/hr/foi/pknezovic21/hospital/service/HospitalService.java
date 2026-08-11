@@ -3,12 +3,15 @@ package hr.foi.pknezovic21.hospital.service;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentWriter;
+import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLoanWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalMaintenanceWriter;
@@ -26,6 +29,7 @@ public class HospitalService {
     private final HospitalInferenceReader inferenceReader;
     private final HospitalRequestWriter requestWriter;
     private final HospitalEquipmentWriter equipmentWriter;
+    private final HospitalEquipmentLoanWriter equipmentLoanWriter;
     private final HospitalMaintenanceWriter maintenanceWriter;
 
     public HospitalService(
@@ -33,12 +37,14 @@ public class HospitalService {
             HospitalInferenceReader inferenceReader,
             HospitalRequestWriter requestWriter,
             HospitalEquipmentWriter equipmentWriter,
+            HospitalEquipmentLoanWriter equipmentLoanWriter,
             HospitalMaintenanceWriter maintenanceWriter
     ) {
         this.knowledgeReader = knowledgeReader;
         this.inferenceReader = inferenceReader;
         this.requestWriter = requestWriter;
         this.equipmentWriter = equipmentWriter;
+        this.equipmentLoanWriter = equipmentLoanWriter;
         this.maintenanceWriter = maintenanceWriter;
     }
 
@@ -75,6 +81,28 @@ public class HospitalService {
         }
         requireText(form.statusId(), "Equipment status is required.");
         equipmentWriter.changeEquipmentStatus(equipmentId.trim(), form.statusId().trim());
+    }
+
+    public List<EquipmentLoanSummary> equipmentLoans() {
+        return knowledgeReader.equipmentLoans();
+    }
+
+    public String createEquipmentLoan(EquipmentLoanForm form) {
+        if (form == null) {
+            throw new IllegalArgumentException("Equipment loan is required.");
+        }
+        requireText(form.equipmentId(), "Equipment is required.");
+        requireText(form.loanedToUnitId(), "Loan unit is required.");
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        String id = "EquipmentLoan-" + suffix;
+        String loanNumber = "LOAN-" + suffix;
+        EquipmentLoanForm cleanForm = new EquipmentLoanForm(
+                form.equipmentId().trim(),
+                form.loanedToUnitId().trim(),
+                clean(form.requestId())
+        );
+        equipmentLoanWriter.addEquipmentLoan(id, loanNumber, Instant.now().toString(), cleanForm);
+        return id;
     }
 
     public List<MaintenanceRecordSummary> maintenanceRecords() {

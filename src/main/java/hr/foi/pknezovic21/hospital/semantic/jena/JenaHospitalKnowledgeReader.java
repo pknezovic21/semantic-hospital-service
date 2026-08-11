@@ -1,6 +1,7 @@
 package hr.foi.pknezovic21.hospital.semantic.jena;
 
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
@@ -83,6 +84,49 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 }
             }
             return equipment;
+        });
+    }
+
+    @Override
+    public List<EquipmentLoanSummary> equipmentLoans() {
+        String query = """
+                PREFIX hospital: <%s>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber ?unit ?unitName ?request ?loanedAt
+                WHERE {
+                  ?loan rdf:type hospital:EquipmentLoan ;
+                        hospital:loanNumber ?loanNumber ;
+                        hospital:loanedEquipment ?equipment ;
+                        hospital:loanedTo ?unit ;
+                        hospital:loanedAt ?loanedAt .
+                  ?equipment hospital:name ?equipmentName ;
+                             hospital:assetNumber ?assetNumber .
+                  ?unit hospital:name ?unitName .
+                  OPTIONAL { ?loan hospital:loanedForRequest ?request . }
+                }
+                ORDER BY DESC(?loanedAt)
+                """.formatted(baseUri);
+        return Txn.calculateRead(dataset, () -> {
+            List<EquipmentLoanSummary> loans = new ArrayList<>();
+            try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+                ResultSet results = execution.execSelect();
+                while (results.hasNext()) {
+                    QuerySolution row = results.next();
+                    loans.add(new EquipmentLoanSummary(
+                            localName(row.getResource("loan")),
+                            literal(row, "loanNumber"),
+                            localName(row.getResource("equipment")),
+                            literal(row, "equipmentName"),
+                            literal(row, "assetNumber"),
+                            localName(row.getResource("unit")),
+                            literal(row, "unitName"),
+                            optionalLocalName(row, "request"),
+                            literal(row, "loanedAt")
+                    ));
+                }
+            }
+            return loans;
         });
     }
 

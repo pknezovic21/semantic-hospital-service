@@ -52,6 +52,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         OntClass.Named equipment = ontClass(model, "Equipment", "Equipment");
         OntClass.Named equipmentType = ontClass(model, "EquipmentType", "Equipment type");
         OntClass.Named equipmentRequest = ontClass(model, "EquipmentRequest", "Equipment request");
+        OntClass.Named equipmentLoan = ontClass(model, "EquipmentLoan", "Equipment loan");
         OntClass.Named maintenanceRecord = ontClass(model, "MaintenanceRecord", "Maintenance record");
         OntClass.Named equipmentStatus = ontClass(model, "EquipmentStatus", "Equipment status");
 
@@ -67,6 +68,9 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "requestsType", "Requests type", equipmentRequest, equipmentType);
         objectProperty(model, "requestedFor", "Requested for", equipmentRequest, unit);
         objectProperty(model, "availableCandidate", "Available candidate", equipmentRequest, equipment);
+        objectProperty(model, "loanedEquipment", "Loaned equipment", equipmentLoan, equipment);
+        objectProperty(model, "loanedTo", "Loaned to", equipmentLoan, unit);
+        objectProperty(model, "loanedForRequest", "Loaned for request", equipmentLoan, equipmentRequest);
         objectProperty(model, "maintenanceFor", "Maintenance for", maintenanceRecord, equipment);
 
         OntDataRange.Named string = model.createDatatype(XSD.xstring.getURI());
@@ -74,12 +78,15 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         dataProperty(model, "name", "Name", model.getOWLThing(), string);
         dataProperty(model, "assetNumber", "Asset number", equipment, string);
         dataProperty(model, "requestNumber", "Request number", equipmentRequest, string);
+        dataProperty(model, "loanNumber", "Loan number", equipmentLoan, string);
+        dataProperty(model, "loanedAt", "Loaned at", equipmentLoan, dateTime);
         dataProperty(model, "maintenanceNumber", "Maintenance number", maintenanceRecord, string);
         dataProperty(model, "maintenanceReason", "Maintenance reason", maintenanceRecord, string);
         dataProperty(model, "reportedAt", "Reported at", maintenanceRecord, dateTime);
 
         individual(model, "Available", "Available", equipmentStatus);
         individual(model, "InMaintenance", "In maintenance", equipmentStatus);
+        individual(model, "Loaned", "Loaned", equipmentStatus);
     }
 
     private OntClass.Named ontClass(OntModel model, String name, String label) {

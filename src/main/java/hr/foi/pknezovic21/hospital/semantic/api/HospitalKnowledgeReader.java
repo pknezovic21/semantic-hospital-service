@@ -1,6 +1,7 @@
 package hr.foi.pknezovic21.hospital.semantic.api;
 
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
@@ -11,6 +12,8 @@ public interface HospitalKnowledgeReader {
     List<UnitSummary> organizationUnits();
 
     List<EquipmentSummary> equipment(EquipmentFilter filter);
+
+    List<EquipmentLoanSummary> equipmentLoans();
 
     List<MaintenanceRecordSummary> maintenanceRecords();
 }
