@@ -5,4 +5,6 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 public interface HospitalEquipmentLoanWriter {
 
     void addEquipmentLoan(String id, String loanNumber, String loanedAt, EquipmentLoanForm form);
+
+    void returnEquipmentLoan(String loanId, String returnedAt);
 }

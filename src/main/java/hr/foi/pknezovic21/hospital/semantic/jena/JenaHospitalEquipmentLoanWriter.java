@@ -59,6 +59,28 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
         });
     }
 
+    @Override
+    public void returnEquipmentLoan(String loanId, String returnedAt) {
+        Txn.executeWrite(dataset, () -> {
+            Model model = dataset.getDefaultModel();
+            Resource loan = resource(loanId);
+            Resource equipment = model.getProperty(loan, property("loanedEquipment")).getResource();
+            Resource available = resource("Available");
+            Resource equipmentLibrary = resource("MedicalEquipmentLibrary");
+            Property hasEquipmentStatus = property("hasEquipmentStatus");
+            Property assignedTo = property("assignedTo");
+
+            requireType(model, loan, "EquipmentLoan", "Equipment loan was not found.");
+            requireOpenLoan(model, loan);
+
+            model.add(loan, property("returnedAt"), model.createTypedLiteral(returnedAt, XSDDatatype.XSDdateTime));
+            model.removeAll(equipment, hasEquipmentStatus, null);
+            model.add(equipment, hasEquipmentStatus, available);
+            model.removeAll(equipment, assignedTo, null);
+            model.add(equipment, assignedTo, equipmentLibrary);
+        });
+    }
+
     private void requireType(Model model, Resource resource, String type, String message) {
         if (!model.contains(resource, RDF.type, resource(type))) {
             throw new IllegalArgumentException(message);
@@ -88,6 +110,12 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
         if (!model.contains(request, property("requestedFor"), loanedTo)
                 || !model.contains(request, property("requestsType"), equipmentType)) {
             throw new IllegalArgumentException("Equipment does not match the request.");
+        }
+    }
+
+    private void requireOpenLoan(Model model, Resource loan) {
+        if (model.contains(loan, property("returnedAt"))) {
+            throw new IllegalArgumentException("Equipment loan is already returned.");
         }
     }
 
