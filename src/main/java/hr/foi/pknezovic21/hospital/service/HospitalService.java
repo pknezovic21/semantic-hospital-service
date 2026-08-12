@@ -7,6 +7,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
+import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
@@ -105,8 +106,17 @@ public class HospitalService {
         return id;
     }
 
+    public void returnEquipmentLoan(String loanId) {
+        requireText(loanId, "Equipment loan is required.");
+        equipmentLoanWriter.returnEquipmentLoan(loanId.trim(), Instant.now().toString());
+    }
+
     public List<MaintenanceRecordSummary> maintenanceRecords() {
         return knowledgeReader.maintenanceRecords();
+    }
+
+    public HospitalOverview hospitalOverview() {
+        return knowledgeReader.hospitalOverview();
     }
 
     public String createMaintenanceRecord(MaintenanceRecordForm form) {

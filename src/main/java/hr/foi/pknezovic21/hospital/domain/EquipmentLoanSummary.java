@@ -9,6 +9,7 @@ public record EquipmentLoanSummary(
         String loanedToUnitId,
         String loanedToUnitName,
         String requestId,
-        String loanedAt
+        String loanedAt,
+        String returnedAt
 ) {
 }

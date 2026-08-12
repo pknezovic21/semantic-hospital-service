@@ -3,6 +3,7 @@ package hr.foi.pknezovic21.hospital.semantic.jena;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
+import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
@@ -93,7 +94,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber ?unit ?unitName ?request ?loanedAt
+                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber ?unit ?unitName ?request ?loanedAt ?returnedAt
                 WHERE {
                   ?loan rdf:type hospital:EquipmentLoan ;
                         hospital:loanNumber ?loanNumber ;
@@ -104,6 +105,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                              hospital:assetNumber ?assetNumber .
                   ?unit hospital:name ?unitName .
                   OPTIONAL { ?loan hospital:loanedForRequest ?request . }
+                  OPTIONAL { ?loan hospital:returnedAt ?returnedAt . }
                 }
                 ORDER BY DESC(?loanedAt)
                 """.formatted(baseUri);
@@ -122,7 +124,8 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             localName(row.getResource("unit")),
                             literal(row, "unitName"),
                             optionalLocalName(row, "request"),
-                            literal(row, "loanedAt")
+                            literal(row, "loanedAt"),
+                            literal(row, "returnedAt")
                     ));
                 }
             }
@@ -166,6 +169,69 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 }
             }
             return records;
+        });
+    }
+
+    @Override
+    public HospitalOverview hospitalOverview() {
+        String query = """
+                PREFIX hospital: <%s>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+                SELECT ?organizationUnitCount ?equipmentCount ?availableEquipmentCount
+                       ?inMaintenanceEquipmentCount ?loanedEquipmentCount ?requestCount
+                       ?loanCount ?activeLoanCount ?maintenanceRecordCount
+                WHERE {
+                  {
+                    SELECT (COUNT(DISTINCT ?unit) AS ?organizationUnitCount)
+                    WHERE {
+                      ?unit rdf:type ?type .
+                      FILTER (?type IN (hospital:Hospital, hospital:ClinicalDivision, hospital:Department))
+                    }
+                  }
+                  { SELECT (COUNT(DISTINCT ?equipment) AS ?equipmentCount) WHERE { ?equipment rdf:type hospital:Equipment . } }
+                  {
+                    SELECT (COUNT(DISTINCT ?equipment) AS ?availableEquipmentCount)
+                    WHERE { ?equipment hospital:hasEquipmentStatus hospital:Available . }
+                  }
+                  {
+                    SELECT (COUNT(DISTINCT ?equipment) AS ?inMaintenanceEquipmentCount)
+                    WHERE { ?equipment hospital:hasEquipmentStatus hospital:InMaintenance . }
+                  }
+                  {
+                    SELECT (COUNT(DISTINCT ?equipment) AS ?loanedEquipmentCount)
+                    WHERE { ?equipment hospital:hasEquipmentStatus hospital:Loaned . }
+                  }
+                  { SELECT (COUNT(DISTINCT ?request) AS ?requestCount) WHERE { ?request rdf:type hospital:EquipmentRequest . } }
+                  { SELECT (COUNT(DISTINCT ?loan) AS ?loanCount) WHERE { ?loan rdf:type hospital:EquipmentLoan . } }
+                  {
+                    SELECT (COUNT(DISTINCT ?loan) AS ?activeLoanCount)
+                    WHERE {
+                      ?loan rdf:type hospital:EquipmentLoan .
+                      FILTER NOT EXISTS { ?loan hospital:returnedAt ?returnedAt . }
+                    }
+                  }
+                  {
+                    SELECT (COUNT(DISTINCT ?record) AS ?maintenanceRecordCount)
+                    WHERE { ?record rdf:type hospital:MaintenanceRecord . }
+                  }
+                }
+                """.formatted(baseUri);
+        return Txn.calculateRead(dataset, () -> {
+            try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+                QuerySolution row = execution.execSelect().next();
+                return new HospitalOverview(
+                        number(row, "organizationUnitCount"),
+                        number(row, "equipmentCount"),
+                        number(row, "availableEquipmentCount"),
+                        number(row, "inMaintenanceEquipmentCount"),
+                        number(row, "loanedEquipmentCount"),
+                        number(row, "requestCount"),
+                        number(row, "loanCount"),
+                        number(row, "activeLoanCount"),
+                        number(row, "maintenanceRecordCount")
+                );
+            }
         });
     }
 
@@ -226,6 +292,10 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
     private String literal(QuerySolution row, String variable) {
         Literal literal = row.getLiteral(variable);
         return literal == null ? null : literal.getString();
+    }
+
+    private long number(QuerySolution row, String variable) {
+        return row.getLiteral(variable).getLong();
     }
 
     private String uri(String name) {

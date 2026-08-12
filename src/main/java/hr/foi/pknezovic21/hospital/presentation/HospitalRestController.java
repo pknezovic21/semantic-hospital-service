@@ -7,6 +7,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
+import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
@@ -79,6 +80,12 @@ public class HospitalRestController {
         return ResponseEntity.created(URI.create("/api/loans/" + id)).body(new CreatedResourceResponse(id));
     }
 
+    @PatchMapping("/loans/{id}/return")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void returnEquipmentLoan(@PathVariable String id) {
+        hospitalService.returnEquipmentLoan(id);
+    }
+
     @GetMapping("/maintenance")
     public List<MaintenanceRecordSummary> maintenanceRecords() {
         return hospitalService.maintenanceRecords();
@@ -88,6 +95,11 @@ public class HospitalRestController {
     public ResponseEntity<CreatedResourceResponse> createMaintenanceRecord(@RequestBody MaintenanceRecordForm form) {
         String id = hospitalService.createMaintenanceRecord(form);
         return ResponseEntity.created(URI.create("/api/maintenance/" + id)).body(new CreatedResourceResponse(id));
+    }
+
+    @GetMapping("/hospital/overview")
+    public HospitalOverview hospitalOverview() {
+        return hospitalService.hospitalOverview();
     }
 
     @ExceptionHandler(IllegalArgumentException.class)

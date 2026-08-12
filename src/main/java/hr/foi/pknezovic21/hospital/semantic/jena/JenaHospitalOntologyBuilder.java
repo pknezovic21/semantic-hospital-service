@@ -80,6 +80,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         dataProperty(model, "requestNumber", "Request number", equipmentRequest, string);
         dataProperty(model, "loanNumber", "Loan number", equipmentLoan, string);
         dataProperty(model, "loanedAt", "Loaned at", equipmentLoan, dateTime);
+        dataProperty(model, "returnedAt", "Returned at", equipmentLoan, dateTime);
         dataProperty(model, "maintenanceNumber", "Maintenance number", maintenanceRecord, string);
         dataProperty(model, "maintenanceReason", "Maintenance reason", maintenanceRecord, string);
         dataProperty(model, "reportedAt", "Reported at", maintenanceRecord, dateTime);
