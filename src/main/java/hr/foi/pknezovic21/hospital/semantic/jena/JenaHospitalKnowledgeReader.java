@@ -5,6 +5,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
+import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
 import java.util.ArrayList;
@@ -173,6 +174,49 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
     }
 
     @Override
+    public List<PurchaseRequestSummary> purchaseRequests() {
+        String query = """
+                PREFIX hospital: <%s>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+                SELECT ?purchaseRequest ?purchaseNumber ?equipmentRequest ?unit ?unitName ?type ?typeName ?reason ?createdAt
+                WHERE {
+                  ?purchaseRequest rdf:type hospital:PurchaseRequest ;
+                                   hospital:purchaseNumber ?purchaseNumber ;
+                                   hospital:purchaseForRequest ?equipmentRequest ;
+                                   hospital:purchaseRequestedFor ?unit ;
+                                   hospital:purchaseRequestsType ?type ;
+                                   hospital:purchaseReason ?reason ;
+                                   hospital:createdAt ?createdAt .
+                  ?unit hospital:name ?unitName .
+                  ?type hospital:name ?typeName .
+                }
+                ORDER BY DESC(?createdAt)
+                """.formatted(baseUri);
+        return Txn.calculateRead(dataset, () -> {
+            List<PurchaseRequestSummary> requests = new ArrayList<>();
+            try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+                ResultSet results = execution.execSelect();
+                while (results.hasNext()) {
+                    QuerySolution row = results.next();
+                    requests.add(new PurchaseRequestSummary(
+                            localName(row.getResource("purchaseRequest")),
+                            literal(row, "purchaseNumber"),
+                            localName(row.getResource("equipmentRequest")),
+                            localName(row.getResource("unit")),
+                            literal(row, "unitName"),
+                            localName(row.getResource("type")),
+                            literal(row, "typeName"),
+                            literal(row, "reason"),
+                            literal(row, "createdAt")
+                    ));
+                }
+            }
+            return requests;
+        });
+    }
+
+    @Override
     public HospitalOverview hospitalOverview() {
         String query = """
                 PREFIX hospital: <%s>
@@ -180,7 +224,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
 
                 SELECT ?organizationUnitCount ?equipmentCount ?availableEquipmentCount
                        ?inMaintenanceEquipmentCount ?loanedEquipmentCount ?requestCount
-                       ?loanCount ?activeLoanCount ?maintenanceRecordCount
+                       ?purchaseRequestCount ?loanCount ?activeLoanCount ?maintenanceRecordCount
                 WHERE {
                   {
                     SELECT (COUNT(DISTINCT ?unit) AS ?organizationUnitCount)
@@ -203,6 +247,10 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                     WHERE { ?equipment hospital:hasEquipmentStatus hospital:Loaned . }
                   }
                   { SELECT (COUNT(DISTINCT ?request) AS ?requestCount) WHERE { ?request rdf:type hospital:EquipmentRequest . } }
+                  {
+                    SELECT (COUNT(DISTINCT ?purchaseRequest) AS ?purchaseRequestCount)
+                    WHERE { ?purchaseRequest rdf:type hospital:PurchaseRequest . }
+                  }
                   { SELECT (COUNT(DISTINCT ?loan) AS ?loanCount) WHERE { ?loan rdf:type hospital:EquipmentLoan . } }
                   {
                     SELECT (COUNT(DISTINCT ?loan) AS ?activeLoanCount)
@@ -227,6 +275,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                         number(row, "inMaintenanceEquipmentCount"),
                         number(row, "loanedEquipmentCount"),
                         number(row, "requestCount"),
+                        number(row, "purchaseRequestCount"),
                         number(row, "loanCount"),
                         number(row, "activeLoanCount"),
                         number(row, "maintenanceRecordCount")

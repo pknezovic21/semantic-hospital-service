@@ -52,6 +52,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         OntClass.Named equipment = ontClass(model, "Equipment", "Equipment");
         OntClass.Named equipmentType = ontClass(model, "EquipmentType", "Equipment type");
         OntClass.Named equipmentRequest = ontClass(model, "EquipmentRequest", "Equipment request");
+        OntClass.Named purchaseRequest = ontClass(model, "PurchaseRequest", "Purchase request");
         OntClass.Named equipmentLoan = ontClass(model, "EquipmentLoan", "Equipment loan");
         OntClass.Named maintenanceRecord = ontClass(model, "MaintenanceRecord", "Maintenance record");
         OntClass.Named equipmentStatus = ontClass(model, "EquipmentStatus", "Equipment status");
@@ -68,6 +69,9 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "requestsType", "Requests type", equipmentRequest, equipmentType);
         objectProperty(model, "requestedFor", "Requested for", equipmentRequest, unit);
         objectProperty(model, "availableCandidate", "Available candidate", equipmentRequest, equipment);
+        objectProperty(model, "purchaseForRequest", "Purchase for request", purchaseRequest, equipmentRequest);
+        objectProperty(model, "purchaseRequestedFor", "Purchase requested for", purchaseRequest, unit);
+        objectProperty(model, "purchaseRequestsType", "Purchase requests type", purchaseRequest, equipmentType);
         objectProperty(model, "loanedEquipment", "Loaned equipment", equipmentLoan, equipment);
         objectProperty(model, "loanedTo", "Loaned to", equipmentLoan, unit);
         objectProperty(model, "loanedForRequest", "Loaned for request", equipmentLoan, equipmentRequest);
@@ -78,6 +82,9 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         dataProperty(model, "name", "Name", model.getOWLThing(), string);
         dataProperty(model, "assetNumber", "Asset number", equipment, string);
         dataProperty(model, "requestNumber", "Request number", equipmentRequest, string);
+        dataProperty(model, "purchaseNumber", "Purchase number", purchaseRequest, string);
+        dataProperty(model, "purchaseReason", "Purchase reason", purchaseRequest, string);
+        dataProperty(model, "createdAt", "Created at", purchaseRequest, dateTime);
         dataProperty(model, "loanNumber", "Loan number", equipmentLoan, string);
         dataProperty(model, "loanedAt", "Loaned at", equipmentLoan, dateTime);
         dataProperty(model, "returnedAt", "Returned at", equipmentLoan, dateTime);
