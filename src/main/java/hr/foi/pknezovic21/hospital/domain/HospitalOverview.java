@@ -7,6 +7,7 @@ public record HospitalOverview(
         long inMaintenanceEquipmentCount,
         long loanedEquipmentCount,
         long requestCount,
+        long purchaseRequestCount,
         long loanCount,
         long activeLoanCount,
         long maintenanceRecordCount

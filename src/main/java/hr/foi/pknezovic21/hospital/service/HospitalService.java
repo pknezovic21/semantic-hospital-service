@@ -10,12 +10,15 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
+import hr.foi.pknezovic21.hospital.domain.PurchaseRequestForm;
+import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLoanWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalMaintenanceWriter;
+import hr.foi.pknezovic21.hospital.semantic.api.HospitalPurchaseRequestWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalRequestWriter;
 import java.time.Instant;
 import java.util.List;
@@ -32,6 +35,7 @@ public class HospitalService {
     private final HospitalEquipmentWriter equipmentWriter;
     private final HospitalEquipmentLoanWriter equipmentLoanWriter;
     private final HospitalMaintenanceWriter maintenanceWriter;
+    private final HospitalPurchaseRequestWriter purchaseRequestWriter;
 
     public HospitalService(
             HospitalKnowledgeReader knowledgeReader,
@@ -39,7 +43,8 @@ public class HospitalService {
             HospitalRequestWriter requestWriter,
             HospitalEquipmentWriter equipmentWriter,
             HospitalEquipmentLoanWriter equipmentLoanWriter,
-            HospitalMaintenanceWriter maintenanceWriter
+            HospitalMaintenanceWriter maintenanceWriter,
+            HospitalPurchaseRequestWriter purchaseRequestWriter
     ) {
         this.knowledgeReader = knowledgeReader;
         this.inferenceReader = inferenceReader;
@@ -47,6 +52,7 @@ public class HospitalService {
         this.equipmentWriter = equipmentWriter;
         this.equipmentLoanWriter = equipmentLoanWriter;
         this.maintenanceWriter = maintenanceWriter;
+        this.purchaseRequestWriter = purchaseRequestWriter;
     }
 
     public List<UnitSummary> organizationUnits() {
@@ -115,6 +121,10 @@ public class HospitalService {
         return knowledgeReader.maintenanceRecords();
     }
 
+    public List<PurchaseRequestSummary> purchaseRequests() {
+        return knowledgeReader.purchaseRequests();
+    }
+
     public HospitalOverview hospitalOverview() {
         return knowledgeReader.hospitalOverview();
     }
@@ -130,6 +140,20 @@ public class HospitalService {
         String maintenanceNumber = "MNT-" + suffix;
         MaintenanceRecordForm cleanForm = new MaintenanceRecordForm(form.equipmentId().trim(), form.reason().trim());
         maintenanceWriter.addMaintenanceRecord(id, maintenanceNumber, Instant.now().toString(), cleanForm);
+        return id;
+    }
+
+    public String createPurchaseRequest(PurchaseRequestForm form) {
+        if (form == null) {
+            throw new IllegalArgumentException("Purchase request is required.");
+        }
+        requireText(form.equipmentRequestId(), "Equipment request is required.");
+        requireText(form.reason(), "Purchase reason is required.");
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        String id = "PurchaseRequest-" + suffix;
+        String purchaseNumber = "PUR-" + suffix;
+        PurchaseRequestForm cleanForm = new PurchaseRequestForm(form.equipmentRequestId().trim(), form.reason().trim());
+        purchaseRequestWriter.addPurchaseRequest(id, purchaseNumber, Instant.now().toString(), cleanForm);
         return id;
     }
 

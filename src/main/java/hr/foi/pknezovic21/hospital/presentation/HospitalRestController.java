@@ -10,6 +10,8 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
+import hr.foi.pknezovic21.hospital.domain.PurchaseRequestForm;
+import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.service.HospitalService;
 import java.net.URI;
@@ -95,6 +97,17 @@ public class HospitalRestController {
     public ResponseEntity<CreatedResourceResponse> createMaintenanceRecord(@RequestBody MaintenanceRecordForm form) {
         String id = hospitalService.createMaintenanceRecord(form);
         return ResponseEntity.created(URI.create("/api/maintenance/" + id)).body(new CreatedResourceResponse(id));
+    }
+
+    @GetMapping("/purchase-requests")
+    public List<PurchaseRequestSummary> purchaseRequests() {
+        return hospitalService.purchaseRequests();
+    }
+
+    @PostMapping("/purchase-requests")
+    public ResponseEntity<CreatedResourceResponse> createPurchaseRequest(@RequestBody PurchaseRequestForm form) {
+        String id = hospitalService.createPurchaseRequest(form);
+        return ResponseEntity.created(URI.create("/api/purchase-requests/" + id)).body(new CreatedResourceResponse(id));
     }
 
     @GetMapping("/hospital/overview")
