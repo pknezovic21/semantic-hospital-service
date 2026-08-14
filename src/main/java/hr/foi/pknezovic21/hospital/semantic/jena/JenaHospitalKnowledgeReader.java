@@ -57,7 +57,8 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             localName(row.getResource("unit")),
                             literal(row, "name"),
                             localName(row.getResource("type")),
-                            optionalLocalName(row, "parent")
+                            optionalLocalName(row, "parent"),
+                            false
                     ));
                 }
             }
@@ -165,7 +166,8 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             literal(row, "equipmentName"),
                             literal(row, "assetNumber"),
                             literal(row, "reason"),
-                            literal(row, "reportedAt")
+                            literal(row, "reportedAt"),
+                            false
                     ));
                 }
             }

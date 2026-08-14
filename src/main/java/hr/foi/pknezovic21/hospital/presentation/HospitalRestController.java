@@ -5,6 +5,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
@@ -52,6 +53,11 @@ public class HospitalRestController {
             @RequestParam(required = false, name = "unit") String unitId
     ) {
         return hospitalService.equipment(new EquipmentFilter(status, typeId, unitId));
+    }
+
+    @GetMapping("/equipment/risk")
+    public List<EquipmentRiskSummary> highRiskEquipment() {
+        return hospitalService.highRiskEquipment();
     }
 
     @PatchMapping("/equipment/{id}/status")

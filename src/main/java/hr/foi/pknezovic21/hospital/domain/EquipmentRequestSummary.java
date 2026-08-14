@@ -8,6 +8,8 @@ public record EquipmentRequestSummary(
         String requestedTypeId,
         String requestedTypeName,
         String candidateEquipmentId,
-        String candidateEquipmentName
+        String candidateEquipmentName,
+        boolean purchaseNeeded,
+        boolean highPriority
 ) {
 }

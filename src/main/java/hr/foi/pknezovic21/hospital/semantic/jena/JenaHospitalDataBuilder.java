@@ -177,7 +177,6 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Display issue",
                 "2026-08-03T14:00:00Z"
         );
-
         equipmentLibrary.addProperty(property("managedBy"), coordinator);
     }
 
