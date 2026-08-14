@@ -4,6 +4,7 @@ public record UnitSummary(
         String id,
         String name,
         String type,
-        String parentId
+        String parentId,
+        boolean equipmentShortage
 ) {
 }

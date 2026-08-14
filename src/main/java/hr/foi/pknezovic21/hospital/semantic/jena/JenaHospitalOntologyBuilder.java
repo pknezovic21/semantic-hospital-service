@@ -48,13 +48,18 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         OntClass.Named unit = ontClass(model, "Unit", "Organization unit");
         ontClass(model, "ClinicalDivision", "Clinical division", unit);
         ontClass(model, "Department", "Department", unit);
+        ontClass(model, "EquipmentShortageUnit", "Equipment shortage unit", unit);
         OntClass.Named staffMember = ontClass(model, "StaffMember", "Staff member");
         OntClass.Named equipment = ontClass(model, "Equipment", "Equipment");
+        ontClass(model, "HighRiskEquipment", "High risk equipment", equipment);
         OntClass.Named equipmentType = ontClass(model, "EquipmentType", "Equipment type");
         OntClass.Named equipmentRequest = ontClass(model, "EquipmentRequest", "Equipment request");
+        ontClass(model, "PurchaseNeededRequest", "Purchase needed request", equipmentRequest);
+        ontClass(model, "HighPriorityRequest", "High priority request", equipmentRequest);
         OntClass.Named purchaseRequest = ontClass(model, "PurchaseRequest", "Purchase request");
         OntClass.Named equipmentLoan = ontClass(model, "EquipmentLoan", "Equipment loan");
         OntClass.Named maintenanceRecord = ontClass(model, "MaintenanceRecord", "Maintenance record");
+        ontClass(model, "HighPriorityMaintenanceRecord", "High priority maintenance record", maintenanceRecord);
         OntClass.Named equipmentStatus = ontClass(model, "EquipmentStatus", "Equipment status");
 
         hospital.addDisjointClass(unit);

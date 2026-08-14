@@ -6,6 +6,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
@@ -56,7 +57,7 @@ public class HospitalService {
     }
 
     public List<UnitSummary> organizationUnits() {
-        return knowledgeReader.organizationUnits();
+        return inferenceReader.organizationUnits();
     }
 
     public List<EquipmentSummary> equipment(EquipmentFilter filter) {
@@ -66,6 +67,10 @@ public class HospitalService {
 
     public List<EquipmentRequestSummary> equipmentRequests() {
         return inferenceReader.equipmentRequests();
+    }
+
+    public List<EquipmentRiskSummary> highRiskEquipment() {
+        return inferenceReader.highRiskEquipment();
     }
 
     public String createEquipmentRequest(EquipmentRequestForm form) {
@@ -118,7 +123,7 @@ public class HospitalService {
     }
 
     public List<MaintenanceRecordSummary> maintenanceRecords() {
-        return knowledgeReader.maintenanceRecords();
+        return inferenceReader.maintenanceRecords();
     }
 
     public List<PurchaseRequestSummary> purchaseRequests() {

@@ -7,6 +7,7 @@ public record MaintenanceRecordSummary(
         String equipmentName,
         String assetNumber,
         String reason,
-        String reportedAt
+        String reportedAt,
+        boolean highPriority
 ) {
 }
