@@ -1,10 +1,12 @@
 package hr.foi.pknezovic21.hospital.service;
 
+import hr.foi.pknezovic21.hospital.domain.EquipmentDetail;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
@@ -63,6 +65,19 @@ public class HospitalService {
     public List<EquipmentSummary> equipment(EquipmentFilter filter) {
         EquipmentFilter normalizedFilter = normalize(filter);
         return knowledgeReader.equipment(normalizedFilter);
+    }
+
+    public EquipmentDetail equipmentDetail(String equipmentId) {
+        requireText(equipmentId, "Equipment is required.");
+        EquipmentDetail detail = inferenceReader.equipmentDetail(equipmentId.trim());
+        if (detail == null) {
+            throw new IllegalArgumentException("Equipment was not found.");
+        }
+        return detail;
+    }
+
+    public EquipmentManagement equipmentManagement() {
+        return knowledgeReader.equipmentManagement();
     }
 
     public List<EquipmentRequestSummary> equipmentRequests() {

@@ -1,5 +1,7 @@
 package hr.foi.pknezovic21.hospital.semantic.jena;
 
+import hr.foi.pknezovic21.hospital.domain.EquipmentDetail;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
@@ -8,6 +10,7 @@ import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.apache.jena.query.Dataset;
+import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
@@ -23,6 +26,7 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
 
     private final Dataset dataset;
     private final JenaHospitalReasoner reasoner;
+    private final String baseUri;
     private final String prefixes;
 
     public JenaHospitalInferenceReader(
@@ -32,6 +36,7 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
     ) {
         this.dataset = dataset;
         this.reasoner = reasoner;
+        this.baseUri = baseUri;
         this.prefixes = """
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -207,6 +212,158 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
         });
     }
 
+    @Override
+    public EquipmentDetail equipmentDetail(String equipmentId) {
+        return Txn.calculateRead(dataset, () -> {
+            Model model = reasoner.create(dataset.getDefaultModel());
+            ParameterizedSparqlString query = new ParameterizedSparqlString(prefixes + """
+
+                    SELECT ?equipment ?name ?assetNumber ?equipmentType ?equipmentTypeName ?category ?categoryName
+                           ?status ?unit ?unitName ?location ?locationName ?supplier ?supplierName
+                           ?contract ?contractName ?contractNumber ?highRisk
+                    WHERE {
+                      ?equipment rdf:type hospital:Equipment ;
+                                 hospital:name ?name ;
+                                 hospital:assetNumber ?assetNumber ;
+                                 hospital:hasEquipmentType ?equipmentType ;
+                                 hospital:hasEquipmentStatus ?status ;
+                                 hospital:assignedTo ?unit .
+                      ?equipmentType hospital:name ?equipmentTypeName .
+                      ?unit hospital:name ?unitName .
+                      OPTIONAL {
+                        ?equipmentType hospital:belongsToCategory ?category .
+                        ?category hospital:name ?categoryName .
+                      }
+                      OPTIONAL {
+                        ?equipment hospital:locatedIn ?location .
+                        ?location hospital:name ?locationName .
+                      }
+                      OPTIONAL {
+                        ?equipmentType hospital:suppliedBy ?supplier .
+                        ?supplier hospital:name ?supplierName .
+                      }
+                      OPTIONAL {
+                        ?equipment hospital:coveredByContract ?contract .
+                        ?contract hospital:name ?contractName ;
+                                  hospital:contractNumber ?contractNumber .
+                      }
+                      BIND(EXISTS { ?equipment rdf:type hospital:HighRiskEquipment } AS ?highRisk)
+                      FILTER (?equipment = ?equipmentFilter)
+                    }
+                    """);
+            query.setIri("equipmentFilter", uri(equipmentId));
+            try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+                ResultSet results = execution.execSelect();
+                if (!results.hasNext()) {
+                    return null;
+                }
+                QuerySolution row = results.next();
+                return new EquipmentDetail(
+                        localName(row.getResource("equipment")),
+                        literal(row, "name"),
+                        literal(row, "assetNumber"),
+                        localName(row.getResource("equipmentType")),
+                        literal(row, "equipmentTypeName"),
+                        optionalLocalName(row, "category"),
+                        literal(row, "categoryName"),
+                        localName(row.getResource("status")),
+                        localName(row.getResource("unit")),
+                        literal(row, "unitName"),
+                        optionalLocalName(row, "location"),
+                        literal(row, "locationName"),
+                        optionalLocalName(row, "supplier"),
+                        literal(row, "supplierName"),
+                        optionalLocalName(row, "contract"),
+                        literal(row, "contractName"),
+                        literal(row, "contractNumber"),
+                        bool(row, "highRisk"),
+                        equipmentMaintenanceHistory(model, equipmentId),
+                        equipmentLoanHistory(model, equipmentId)
+                );
+            }
+        });
+    }
+
+    private List<MaintenanceRecordSummary> equipmentMaintenanceHistory(Model model, String equipmentId) {
+        ParameterizedSparqlString query = new ParameterizedSparqlString(prefixes + """
+
+                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber ?reason ?reportedAt ?highPriority
+                WHERE {
+                  ?record rdf:type hospital:MaintenanceRecord ;
+                          hospital:maintenanceNumber ?maintenanceNumber ;
+                          hospital:maintenanceFor ?equipment ;
+                          hospital:maintenanceReason ?reason ;
+                          hospital:reportedAt ?reportedAt .
+                  ?equipment hospital:name ?equipmentName ;
+                             hospital:assetNumber ?assetNumber .
+                  BIND(EXISTS { ?record rdf:type hospital:HighPriorityMaintenanceRecord } AS ?highPriority)
+                  FILTER (?equipment = ?equipmentFilter)
+                }
+                ORDER BY DESC(?reportedAt)
+                """);
+        query.setIri("equipmentFilter", uri(equipmentId));
+        List<MaintenanceRecordSummary> records = new ArrayList<>();
+        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+            ResultSet results = execution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution row = results.next();
+                records.add(new MaintenanceRecordSummary(
+                        localName(row.getResource("record")),
+                        literal(row, "maintenanceNumber"),
+                        localName(row.getResource("equipment")),
+                        literal(row, "equipmentName"),
+                        literal(row, "assetNumber"),
+                        literal(row, "reason"),
+                        literal(row, "reportedAt"),
+                        bool(row, "highPriority")
+                ));
+            }
+        }
+        return records;
+    }
+
+    private List<EquipmentLoanSummary> equipmentLoanHistory(Model model, String equipmentId) {
+        ParameterizedSparqlString query = new ParameterizedSparqlString(prefixes + """
+
+                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber ?unit ?unitName ?request ?loanedAt ?returnedAt
+                WHERE {
+                  ?loan rdf:type hospital:EquipmentLoan ;
+                        hospital:loanNumber ?loanNumber ;
+                        hospital:loanedEquipment ?equipment ;
+                        hospital:loanedTo ?unit ;
+                        hospital:loanedAt ?loanedAt .
+                  ?equipment hospital:name ?equipmentName ;
+                             hospital:assetNumber ?assetNumber .
+                  ?unit hospital:name ?unitName .
+                  OPTIONAL { ?loan hospital:loanedForRequest ?request . }
+                  OPTIONAL { ?loan hospital:returnedAt ?returnedAt . }
+                  FILTER (?equipment = ?equipmentFilter)
+                }
+                ORDER BY DESC(?loanedAt)
+                """);
+        query.setIri("equipmentFilter", uri(equipmentId));
+        List<EquipmentLoanSummary> loans = new ArrayList<>();
+        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+            ResultSet results = execution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution row = results.next();
+                loans.add(new EquipmentLoanSummary(
+                        localName(row.getResource("loan")),
+                        literal(row, "loanNumber"),
+                        localName(row.getResource("equipment")),
+                        literal(row, "equipmentName"),
+                        literal(row, "assetNumber"),
+                        localName(row.getResource("unit")),
+                        literal(row, "unitName"),
+                        optionalLocalName(row, "request"),
+                        literal(row, "loanedAt"),
+                        literal(row, "returnedAt")
+                ));
+            }
+        }
+        return loans;
+    }
+
     private String optionalLocalName(QuerySolution row, String variable) {
         return row.contains(variable) ? localName(row.getResource(variable)) : null;
     }
@@ -222,5 +379,9 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
 
     private boolean bool(QuerySolution row, String variable) {
         return row.getLiteral(variable).getBoolean();
+    }
+
+    private String uri(String name) {
+        return baseUri + name;
     }
 }
