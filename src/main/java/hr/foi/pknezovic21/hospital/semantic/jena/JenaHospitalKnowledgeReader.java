@@ -2,6 +2,12 @@ package hr.foi.pknezovic21.hospital.semantic.jena;
 
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagementCategory;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagementContract;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagementLocation;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagementOption;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagementSupplier;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
@@ -79,15 +85,92 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             localName(row.getResource("equipment")),
                             literal(row, "name"),
                             literal(row, "assetNumber"),
+                            localName(row.getResource("equipmentType")),
                             literal(row, "equipmentTypeName"),
                             localName(row.getResource("status")),
                             localName(row.getResource("unit")),
-                            literal(row, "unitName")
+                            literal(row, "unitName"),
+                            optionalLocalName(row, "location"),
+                            literal(row, "locationName"),
+                            optionalLocalName(row, "category"),
+                            literal(row, "categoryName")
                     ));
                 }
             }
             return equipment;
         });
+    }
+
+    @Override
+    public EquipmentManagement equipmentManagement() {
+        return Txn.calculateRead(dataset, () -> new EquipmentManagement(
+                equipmentLocations("""
+                        PREFIX hospital: <%s>
+                        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                        SELECT ?location ?name ?type ?locationCode ?unit ?unitName
+                        WHERE {
+                          ?location rdf:type ?type ;
+                                    hospital:name ?name ;
+                                    hospital:locationCode ?locationCode .
+                          ?type rdfs:subClassOf* hospital:Location .
+                          OPTIONAL {
+                            ?location hospital:servesUnit ?unit .
+                            ?unit hospital:name ?unitName .
+                          }
+                        }
+                        ORDER BY ?name
+                        """.formatted(baseUri)),
+                equipmentCategories("""
+                        PREFIX hospital: <%s>
+                        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                        SELECT ?category ?name ?type ?categoryCode
+                        WHERE {
+                          ?category rdf:type ?type ;
+                                    hospital:name ?name ;
+                                    hospital:categoryCode ?categoryCode .
+                          ?type rdfs:subClassOf* hospital:EquipmentCategory .
+                        }
+                        ORDER BY ?name
+                        """.formatted(baseUri)),
+                equipmentOptions(equipmentOptionQuery("EquipmentType")),
+                equipmentOptions(equipmentOptionQuery("EquipmentStatus")),
+                equipmentSuppliers("""
+                        PREFIX hospital: <%s>
+                        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                        SELECT ?supplier ?name ?type ?supplierCode
+                        WHERE {
+                          ?supplier rdf:type ?type ;
+                                    hospital:name ?name ;
+                                    hospital:supplierCode ?supplierCode .
+                          ?type rdfs:subClassOf* hospital:Supplier .
+                        }
+                        ORDER BY ?name
+                        """.formatted(baseUri)),
+                maintenanceContracts("""
+                        PREFIX hospital: <%s>
+                        PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                        PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                        SELECT ?contract ?name ?type ?contractNumber ?supplier ?supplierName
+                        WHERE {
+                          ?contract rdf:type ?type ;
+                                    hospital:name ?name ;
+                                    hospital:contractNumber ?contractNumber .
+                          ?type rdfs:subClassOf* hospital:Contract .
+                          OPTIONAL {
+                            ?contract hospital:contractedSupplier ?supplier .
+                            ?supplier hospital:name ?supplierName .
+                          }
+                        }
+                        ORDER BY ?name
+                        """.formatted(baseUri))
+        ));
     }
 
     @Override
@@ -292,7 +375,8 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-                SELECT ?equipment ?name ?assetNumber ?equipmentTypeName ?status ?unit ?unitName
+                SELECT ?equipment ?name ?assetNumber ?equipmentType ?equipmentTypeName ?status ?unit ?unitName
+                       ?location ?locationName ?category ?categoryName
                 WHERE {
                   ?equipment rdf:type hospital:Equipment ;
                              hospital:name ?name ;
@@ -302,6 +386,14 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                              hospital:assignedTo ?unit .
                   ?equipmentType hospital:name ?equipmentTypeName .
                   ?unit hospital:name ?unitName .
+                  OPTIONAL {
+                    ?equipment hospital:locatedIn ?location .
+                    ?location hospital:name ?locationName .
+                  }
+                  OPTIONAL {
+                    ?equipmentType hospital:belongsToCategory ?category .
+                    ?category hospital:name ?categoryName .
+                  }
                 %s
                 }
                 ORDER BY ?assetNumber
@@ -330,6 +422,111 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
             filters.append("  FILTER (?unit = ?unitFilter)\n");
         }
         return filters.toString();
+    }
+
+    private List<EquipmentManagementLocation> equipmentLocations(String query) {
+        List<EquipmentManagementLocation> items = new ArrayList<>();
+        try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+            ResultSet results = execution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution row = results.next();
+                items.add(new EquipmentManagementLocation(
+                        localName(row.getResource("location")),
+                        literal(row, "name"),
+                        localName(row.getResource("type")),
+                        literal(row, "locationCode"),
+                        optionalLocalName(row, "unit"),
+                        literal(row, "unitName")
+                ));
+            }
+        }
+        return items;
+    }
+
+    private List<EquipmentManagementCategory> equipmentCategories(String query) {
+        List<EquipmentManagementCategory> items = new ArrayList<>();
+        try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+            ResultSet results = execution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution row = results.next();
+                items.add(new EquipmentManagementCategory(
+                        localName(row.getResource("category")),
+                        literal(row, "name"),
+                        localName(row.getResource("type")),
+                        literal(row, "categoryCode")
+                ));
+            }
+        }
+        return items;
+    }
+
+    private List<EquipmentManagementSupplier> equipmentSuppliers(String query) {
+        List<EquipmentManagementSupplier> items = new ArrayList<>();
+        try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+            ResultSet results = execution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution row = results.next();
+                items.add(new EquipmentManagementSupplier(
+                        localName(row.getResource("supplier")),
+                        literal(row, "name"),
+                        localName(row.getResource("type")),
+                        literal(row, "supplierCode")
+                ));
+            }
+        }
+        return items;
+    }
+
+    private List<EquipmentManagementOption> equipmentOptions(String query) {
+        List<EquipmentManagementOption> items = new ArrayList<>();
+        try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+            ResultSet results = execution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution row = results.next();
+                items.add(new EquipmentManagementOption(
+                        localName(row.getResource("option")),
+                        literal(row, "name")
+                ));
+            }
+        }
+        return items;
+    }
+
+    private String equipmentOptionQuery(String optionClass) {
+        return """
+                PREFIX hospital: <%s>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                SELECT ?option ?name
+                WHERE {
+                  ?option rdf:type ?type .
+                  ?type rdfs:subClassOf* hospital:%s .
+                  OPTIONAL { ?option hospital:name ?domainName . }
+                  OPTIONAL { ?option rdfs:label ?label . }
+                  BIND(COALESCE(?domainName, ?label) AS ?name)
+                }
+                ORDER BY ?name
+                """.formatted(baseUri, optionClass);
+    }
+
+    private List<EquipmentManagementContract> maintenanceContracts(String query) {
+        List<EquipmentManagementContract> items = new ArrayList<>();
+        try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+            ResultSet results = execution.execSelect();
+            while (results.hasNext()) {
+                QuerySolution row = results.next();
+                items.add(new EquipmentManagementContract(
+                        localName(row.getResource("contract")),
+                        literal(row, "name"),
+                        localName(row.getResource("type")),
+                        literal(row, "contractNumber"),
+                        optionalLocalName(row, "supplier"),
+                        literal(row, "supplierName")
+                ));
+            }
+        }
+        return items;
     }
 
     private String optionalLocalName(QuerySolution row, String variable) {

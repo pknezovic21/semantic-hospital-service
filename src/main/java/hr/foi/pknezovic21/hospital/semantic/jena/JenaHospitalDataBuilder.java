@@ -55,100 +55,249 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "StaffMember",
                 "Equipment library coordinator"
         );
-        Resource infusionPumpType = equipmentType(model, "InfusionPumpType", "Infusion pump");
-        Resource patientMonitorType = equipmentType(model, "PatientMonitorType", "Patient monitor");
-        Resource syringePumpType = equipmentType(model, "SyringePumpType", "Syringe pump");
-        Resource ultrasoundScannerType = equipmentType(model, "UltrasoundScannerType", "Ultrasound scanner");
-        Resource ecgMonitorType = equipmentType(model, "EcgMonitorType", "ECG monitor");
-        Resource bladderScannerType = equipmentType(model, "BladderScannerType", "Bladder scanner");
+        Resource infusionCategory = category(
+                model,
+                "InfusionEquipmentCategory",
+                "InfusionCategory",
+                "Infusion equipment",
+                "CAT-INF"
+        );
+        Resource monitoringCategory = category(
+                model,
+                "MonitoringEquipmentCategory",
+                "MonitoringCategory",
+                "Monitoring equipment",
+                "CAT-MON"
+        );
+        Resource diagnosticCategory = category(
+                model,
+                "DiagnosticEquipmentCategory",
+                "DiagnosticCategory",
+                "Diagnostic equipment",
+                "CAT-DIA"
+        );
+        Resource equipmentSupplier = supplier(
+                model,
+                "ClinicalEquipmentSupplier",
+                "EquipmentSupplier",
+                "Clinical equipment supplier",
+                "SUP-EQ"
+        );
+        Resource maintenanceSupplier = supplier(
+                model,
+                "MaintenanceServiceSupplier",
+                "ServiceSupplier",
+                "Maintenance service supplier",
+                "SUP-MNT"
+        );
+        Resource maintenanceContract = contract(
+                model,
+                "ManagedMaintenanceContract",
+                "MaintenanceContract",
+                "Managed maintenance contract",
+                "MEC-001",
+                maintenanceSupplier
+        );
+        Resource equipmentLibraryStore = location(
+                model,
+                "EquipmentLibraryStore",
+                "EquipmentStore",
+                "Equipment library store",
+                "LOC-ELS"
+        );
+        Resource emergencyStore = location(
+                model,
+                "EmergencyStore",
+                "DepartmentStore",
+                "Emergency store",
+                "LOC-EDS"
+        );
+        Resource criticalCareWard = location(
+                model,
+                "CriticalCareWard",
+                "Ward",
+                "Critical care ward",
+                "LOC-CCW"
+        );
+        Resource imagingRoom = location(
+                model,
+                "ImagingRoom",
+                "ProcedureRoom",
+                "Imaging room",
+                "LOC-IMG"
+        );
+        Resource surgeryStore = location(
+                model,
+                "SurgeryStore",
+                "DepartmentStore",
+                "Surgery store",
+                "LOC-SUR"
+        );
+        equipmentLibraryStore.addProperty(property("servesUnit"), equipmentLibrary);
+        emergencyStore.addProperty(property("servesUnit"), emergency);
+        criticalCareWard.addProperty(property("servesUnit"), criticalCare);
+        imagingRoom.addProperty(property("servesUnit"), imaging);
+        surgeryStore.addProperty(property("servesUnit"), surgery);
+        Resource infusionPumpType = equipmentType(
+                model,
+                "InfusionPumpType",
+                "Infusion pump",
+                infusionCategory,
+                equipmentSupplier
+        );
+        Resource patientMonitorType = equipmentType(
+                model,
+                "PatientMonitorType",
+                "Patient monitor",
+                monitoringCategory,
+                equipmentSupplier
+        );
+        Resource syringePumpType = equipmentType(
+                model,
+                "SyringePumpType",
+                "Syringe pump",
+                infusionCategory,
+                equipmentSupplier
+        );
+        Resource ultrasoundScannerType = equipmentType(
+                model,
+                "UltrasoundScannerType",
+                "Ultrasound scanner",
+                diagnosticCategory,
+                equipmentSupplier
+        );
+        Resource ecgMonitorType = equipmentType(
+                model,
+                "EcgMonitorType",
+                "ECG monitor",
+                monitoringCategory,
+                equipmentSupplier
+        );
+        Resource bladderScannerType = equipmentType(
+                model,
+                "BladderScannerType",
+                "Bladder scanner",
+                diagnosticCategory,
+                equipmentSupplier
+        );
         equipment(
                 model,
                 "Equipment001",
+                "InfusionEquipment",
                 "Volumetric infusion pump",
                 "INF-001",
                 infusionPumpType,
                 equipmentLibrary,
+                equipmentLibraryStore,
+                maintenanceContract,
                 resource("Available")
         );
         Resource infusionPumpInMaintenance = equipment(
                 model,
                 "Equipment002",
+                "InfusionEquipment",
                 "Volumetric infusion pump",
                 "INF-002",
                 infusionPumpType,
                 equipmentLibrary,
+                equipmentLibraryStore,
+                maintenanceContract,
                 resource("InMaintenance")
         );
         equipment(
                 model,
                 "Equipment003",
+                "MonitoringEquipment",
                 "Patient monitor",
                 "MON-001",
                 patientMonitorType,
                 medicine,
+                criticalCareWard,
+                maintenanceContract,
                 resource("Available")
         );
         equipment(
                 model,
                 "Equipment004",
+                "InfusionEquipment",
                 "Syringe pump",
                 "SYR-001",
                 syringePumpType,
                 criticalCare,
+                criticalCareWard,
+                maintenanceContract,
                 resource("Available")
         );
         Resource syringePumpInMaintenance = equipment(
                 model,
                 "Equipment005",
+                "InfusionEquipment",
                 "Syringe pump",
                 "SYR-002",
                 syringePumpType,
                 emergency,
+                emergencyStore,
+                maintenanceContract,
                 resource("InMaintenance")
         );
         equipment(
                 model,
                 "Equipment006",
+                "DiagnosticEquipment",
                 "Ultrasound scanner",
                 "US-001",
                 ultrasoundScannerType,
                 imaging,
+                imagingRoom,
+                maintenanceContract,
                 resource("Available")
         );
         equipment(
                 model,
                 "Equipment007",
+                "MonitoringEquipment",
                 "ECG monitor",
                 "ECG-001",
                 ecgMonitorType,
                 emergency,
+                emergencyStore,
+                maintenanceContract,
                 resource("Available")
         );
         equipment(
                 model,
                 "Equipment008",
+                "DiagnosticEquipment",
                 "Bladder scanner",
                 "BLD-001",
                 bladderScannerType,
                 equipmentLibrary,
+                equipmentLibraryStore,
+                maintenanceContract,
                 resource("Available")
         );
         Resource patientMonitorInMaintenance = equipment(
                 model,
                 "Equipment009",
+                "MonitoringEquipment",
                 "Patient monitor",
                 "MON-002",
                 patientMonitorType,
                 criticalCare,
+                criticalCareWard,
+                maintenanceContract,
                 resource("InMaintenance")
         );
         equipment(
                 model,
                 "Equipment010",
+                "InfusionEquipment",
                 "Volumetric infusion pump",
                 "INF-003",
                 infusionPumpType,
                 surgery,
+                surgeryStore,
+                maintenanceContract,
                 resource("Available")
         );
         equipmentRequest(model, "EquipmentRequest001", "REQ-001", medicine, infusionPumpType);
@@ -180,23 +329,59 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
         equipmentLibrary.addProperty(property("managedBy"), coordinator);
     }
 
-    private Resource equipmentType(Model model, String id, String name) {
-        return individual(model, id, "EquipmentType", name);
+    private Resource equipmentType(Model model, String id, String name, Resource category, Resource supplier) {
+        return individual(model, id, "EquipmentType", name)
+                .addProperty(property("belongsToCategory"), category)
+                .addProperty(property("suppliedBy"), supplier);
+    }
+
+    private Resource category(Model model, String id, String type, String name, String code) {
+        return individual(model, id, type, name)
+                .addLiteral(property("categoryCode"), code);
+    }
+
+    private Resource location(Model model, String id, String type, String name, String code) {
+        return individual(model, id, type, name)
+                .addLiteral(property("locationCode"), code);
+    }
+
+    private Resource supplier(Model model, String id, String type, String name, String code) {
+        return individual(model, id, type, name)
+                .addLiteral(property("supplierCode"), code);
+    }
+
+    private Resource contract(
+            Model model,
+            String id,
+            String type,
+            String name,
+            String contractNumber,
+            Resource supplier
+    ) {
+        return individual(model, id, type, name)
+                .addLiteral(property("contractNumber"), contractNumber)
+                .addProperty(property("contractedSupplier"), supplier);
     }
 
     private Resource equipment(
             Model model,
             String id,
+            String equipmentClass,
             String name,
             String assetNumber,
             Resource equipmentType,
             Resource assignedTo,
+            Resource location,
+            Resource contract,
             Resource status
     ) {
         return individual(model, id, "Equipment", name)
+                .addProperty(RDF.type, resource(equipmentClass))
                 .addLiteral(property("assetNumber"), assetNumber)
                 .addProperty(property("hasEquipmentType"), equipmentType)
                 .addProperty(property("assignedTo"), assignedTo)
+                .addProperty(property("locatedIn"), location)
+                .addProperty(property("coveredByContract"), contract)
                 .addProperty(property("hasEquipmentStatus"), status);
     }
 

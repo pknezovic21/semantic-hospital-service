@@ -1,8 +1,10 @@
 package hr.foi.pknezovic21.hospital.presentation;
 
+import hr.foi.pknezovic21.hospital.domain.EquipmentDetail;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
@@ -58,6 +60,16 @@ public class HospitalRestController {
     @GetMapping("/equipment/risk")
     public List<EquipmentRiskSummary> highRiskEquipment() {
         return hospitalService.highRiskEquipment();
+    }
+
+    @GetMapping("/equipment/{id}")
+    public EquipmentDetail equipmentDetail(@PathVariable String id) {
+        return hospitalService.equipmentDetail(id);
+    }
+
+    @GetMapping("/equipment-management")
+    public EquipmentManagement equipmentManagement() {
+        return hospitalService.equipmentManagement();
     }
 
     @PatchMapping("/equipment/{id}/status")
