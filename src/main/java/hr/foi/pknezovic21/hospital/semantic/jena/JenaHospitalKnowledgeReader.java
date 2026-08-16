@@ -179,16 +179,19 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber ?unit ?unitName ?request ?loanedAt ?returnedAt
+                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber
+                       ?fromUnit ?fromUnitName ?toUnit ?toUnitName ?request ?loanedAt ?returnedAt
                 WHERE {
                   ?loan rdf:type hospital:EquipmentLoan ;
                         hospital:loanNumber ?loanNumber ;
                         hospital:loanedEquipment ?equipment ;
-                        hospital:loanedTo ?unit ;
+                        hospital:loanedFrom ?fromUnit ;
+                        hospital:loanedTo ?toUnit ;
                         hospital:loanedAt ?loanedAt .
                   ?equipment hospital:name ?equipmentName ;
                              hospital:assetNumber ?assetNumber .
-                  ?unit hospital:name ?unitName .
+                  ?fromUnit hospital:name ?fromUnitName .
+                  ?toUnit hospital:name ?toUnitName .
                   OPTIONAL { ?loan hospital:loanedForRequest ?request . }
                   OPTIONAL { ?loan hospital:returnedAt ?returnedAt . }
                 }
@@ -206,8 +209,10 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             localName(row.getResource("equipment")),
                             literal(row, "equipmentName"),
                             literal(row, "assetNumber"),
-                            localName(row.getResource("unit")),
-                            literal(row, "unitName"),
+                            localName(row.getResource("fromUnit")),
+                            literal(row, "fromUnitName"),
+                            localName(row.getResource("toUnit")),
+                            literal(row, "toUnitName"),
                             optionalLocalName(row, "request"),
                             literal(row, "loanedAt"),
                             literal(row, "returnedAt")
@@ -224,15 +229,19 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber ?reason ?reportedAt
+                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber
+                       ?reportedFor ?reportedForName ?reason ?reportedAt ?completedAt
                 WHERE {
                   ?record rdf:type hospital:MaintenanceRecord ;
                           hospital:maintenanceNumber ?maintenanceNumber ;
                           hospital:maintenanceFor ?equipment ;
+                          hospital:maintenanceReportedFor ?reportedFor ;
                           hospital:maintenanceReason ?reason ;
                           hospital:reportedAt ?reportedAt .
                   ?equipment hospital:name ?equipmentName ;
                              hospital:assetNumber ?assetNumber .
+                  ?reportedFor hospital:name ?reportedForName .
+                  OPTIONAL { ?record hospital:completedAt ?completedAt . }
                 }
                 ORDER BY DESC(?reportedAt)
                 """.formatted(baseUri);
@@ -248,8 +257,11 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             localName(row.getResource("equipment")),
                             literal(row, "equipmentName"),
                             literal(row, "assetNumber"),
+                            localName(row.getResource("reportedFor")),
+                            literal(row, "reportedForName"),
                             literal(row, "reason"),
                             literal(row, "reportedAt"),
+                            literal(row, "completedAt"),
                             false
                     ));
                 }
@@ -309,7 +321,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
 
                 SELECT ?organizationUnitCount ?equipmentCount ?availableEquipmentCount
                        ?inMaintenanceEquipmentCount ?loanedEquipmentCount ?requestCount
-                       ?purchaseRequestCount ?loanCount ?activeLoanCount ?maintenanceRecordCount
+                       ?openRequestCount ?purchaseRequestCount ?loanCount ?activeLoanCount ?maintenanceRecordCount
                 WHERE {
                   {
                     SELECT (COUNT(DISTINCT ?unit) AS ?organizationUnitCount)
@@ -332,6 +344,13 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                     WHERE { ?equipment hospital:hasEquipmentStatus hospital:Loaned . }
                   }
                   { SELECT (COUNT(DISTINCT ?request) AS ?requestCount) WHERE { ?request rdf:type hospital:EquipmentRequest . } }
+                  {
+                    SELECT (COUNT(DISTINCT ?request) AS ?openRequestCount)
+                    WHERE {
+                      ?request rdf:type hospital:EquipmentRequest ;
+                               hospital:hasRequestStatus hospital:Open .
+                    }
+                  }
                   {
                     SELECT (COUNT(DISTINCT ?purchaseRequest) AS ?purchaseRequestCount)
                     WHERE { ?purchaseRequest rdf:type hospital:PurchaseRequest . }
@@ -360,6 +379,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                         number(row, "inMaintenanceEquipmentCount"),
                         number(row, "loanedEquipmentCount"),
                         number(row, "requestCount"),
+                        number(row, "openRequestCount"),
                         number(row, "purchaseRequestCount"),
                         number(row, "loanCount"),
                         number(row, "activeLoanCount"),

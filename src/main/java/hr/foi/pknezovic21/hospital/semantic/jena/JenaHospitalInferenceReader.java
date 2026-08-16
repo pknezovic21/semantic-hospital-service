@@ -1,6 +1,7 @@
 package hr.foi.pknezovic21.hospital.semantic.jena;
 
 import hr.foi.pknezovic21.hospital.domain.EquipmentDetail;
+import hr.foi.pknezovic21.hospital.domain.EquipmentCandidateSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
@@ -8,7 +9,9 @@ import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.QueryExecution;
@@ -108,28 +111,48 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                 ORDER BY ?requestNumber ?candidateName
                 """;
         return Txn.calculateRead(dataset, () -> {
-            List<EquipmentRequestSummary> requests = new ArrayList<>();
+            Map<String, EquipmentRequestSummary> requests = new LinkedHashMap<>();
             Model model = reasoner.create(dataset.getDefaultModel());
             try (QueryExecution execution = QueryExecution.model(model).query(query).build()) {
                 ResultSet results = execution.execSelect();
                 while (results.hasNext()) {
                     QuerySolution row = results.next();
-                    requests.add(new EquipmentRequestSummary(
-                            localName(row.getResource("request")),
-                            literal(row, "requestNumber"),
-                            localName(row.getResource("status")),
-                            localName(row.getResource("unit")),
-                            literal(row, "unitName"),
-                            localName(row.getResource("type")),
-                            literal(row, "typeName"),
-                            optionalLocalName(row, "candidate"),
-                            literal(row, "candidateName"),
-                            bool(row, "purchaseNeeded"),
-                            bool(row, "highPriority")
-                    ));
+                    String requestId = localName(row.getResource("request"));
+                    EquipmentRequestSummary request = requests.computeIfAbsent(requestId, ignored ->
+                            new EquipmentRequestSummary(
+                                    requestId,
+                                    literal(row, "requestNumber"),
+                                    localName(row.getResource("status")),
+                                    localName(row.getResource("unit")),
+                                    literal(row, "unitName"),
+                                    localName(row.getResource("type")),
+                                    literal(row, "typeName"),
+                                    new ArrayList<>(),
+                                    bool(row, "purchaseNeeded"),
+                                    bool(row, "highPriority")
+                            ));
+                    if (row.contains("candidate")) {
+                        request.candidates().add(new EquipmentCandidateSummary(
+                                localName(row.getResource("candidate")),
+                                literal(row, "candidateName")
+                        ));
+                    }
                 }
             }
-            return requests;
+            return requests.values().stream()
+                    .map(request -> new EquipmentRequestSummary(
+                            request.id(),
+                            request.requestNumber(),
+                            request.status(),
+                            request.requestedForUnitId(),
+                            request.requestedForUnitName(),
+                            request.requestedTypeId(),
+                            request.requestedTypeName(),
+                            List.copyOf(request.candidates()),
+                            request.purchaseNeeded(),
+                            request.highPriority()
+                    ))
+                    .toList();
         });
     }
 
@@ -137,15 +160,19 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
     public List<MaintenanceRecordSummary> maintenanceRecords() {
         String query = prefixes + """
 
-                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber ?reason ?reportedAt ?highPriority
+                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber
+                       ?reportedFor ?reportedForName ?reason ?reportedAt ?completedAt ?highPriority
                 WHERE {
                   ?record rdf:type hospital:MaintenanceRecord ;
                           hospital:maintenanceNumber ?maintenanceNumber ;
                           hospital:maintenanceFor ?equipment ;
+                          hospital:maintenanceReportedFor ?reportedFor ;
                           hospital:maintenanceReason ?reason ;
                           hospital:reportedAt ?reportedAt .
                   ?equipment hospital:name ?equipmentName ;
                              hospital:assetNumber ?assetNumber .
+                  ?reportedFor hospital:name ?reportedForName .
+                  OPTIONAL { ?record hospital:completedAt ?completedAt . }
                   BIND(EXISTS { ?record rdf:type hospital:HighPriorityMaintenanceRecord } AS ?highPriority)
                 }
                 ORDER BY DESC(?reportedAt)
@@ -163,8 +190,11 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                             localName(row.getResource("equipment")),
                             literal(row, "equipmentName"),
                             literal(row, "assetNumber"),
+                            localName(row.getResource("reportedFor")),
+                            literal(row, "reportedForName"),
                             literal(row, "reason"),
                             literal(row, "reportedAt"),
+                            literal(row, "completedAt"),
                             bool(row, "highPriority")
                     ));
                 }
@@ -289,15 +319,19 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
     private List<MaintenanceRecordSummary> equipmentMaintenanceHistory(Model model, String equipmentId) {
         ParameterizedSparqlString query = new ParameterizedSparqlString(prefixes + """
 
-                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber ?reason ?reportedAt ?highPriority
+                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber
+                       ?reportedFor ?reportedForName ?reason ?reportedAt ?completedAt ?highPriority
                 WHERE {
                   ?record rdf:type hospital:MaintenanceRecord ;
                           hospital:maintenanceNumber ?maintenanceNumber ;
                           hospital:maintenanceFor ?equipment ;
+                          hospital:maintenanceReportedFor ?reportedFor ;
                           hospital:maintenanceReason ?reason ;
                           hospital:reportedAt ?reportedAt .
                   ?equipment hospital:name ?equipmentName ;
                              hospital:assetNumber ?assetNumber .
+                  ?reportedFor hospital:name ?reportedForName .
+                  OPTIONAL { ?record hospital:completedAt ?completedAt . }
                   BIND(EXISTS { ?record rdf:type hospital:HighPriorityMaintenanceRecord } AS ?highPriority)
                   FILTER (?equipment = ?equipmentFilter)
                 }
@@ -315,8 +349,11 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                         localName(row.getResource("equipment")),
                         literal(row, "equipmentName"),
                         literal(row, "assetNumber"),
+                        localName(row.getResource("reportedFor")),
+                        literal(row, "reportedForName"),
                         literal(row, "reason"),
                         literal(row, "reportedAt"),
+                        literal(row, "completedAt"),
                         bool(row, "highPriority")
                 ));
             }
@@ -327,16 +364,19 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
     private List<EquipmentLoanSummary> equipmentLoanHistory(Model model, String equipmentId) {
         ParameterizedSparqlString query = new ParameterizedSparqlString(prefixes + """
 
-                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber ?unit ?unitName ?request ?loanedAt ?returnedAt
+                SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber
+                       ?fromUnit ?fromUnitName ?toUnit ?toUnitName ?request ?loanedAt ?returnedAt
                 WHERE {
                   ?loan rdf:type hospital:EquipmentLoan ;
                         hospital:loanNumber ?loanNumber ;
                         hospital:loanedEquipment ?equipment ;
-                        hospital:loanedTo ?unit ;
+                        hospital:loanedFrom ?fromUnit ;
+                        hospital:loanedTo ?toUnit ;
                         hospital:loanedAt ?loanedAt .
                   ?equipment hospital:name ?equipmentName ;
                              hospital:assetNumber ?assetNumber .
-                  ?unit hospital:name ?unitName .
+                  ?fromUnit hospital:name ?fromUnitName .
+                  ?toUnit hospital:name ?toUnitName .
                   OPTIONAL { ?loan hospital:loanedForRequest ?request . }
                   OPTIONAL { ?loan hospital:returnedAt ?returnedAt . }
                   FILTER (?equipment = ?equipmentFilter)
@@ -355,8 +395,10 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                         localName(row.getResource("equipment")),
                         literal(row, "equipmentName"),
                         literal(row, "assetNumber"),
-                        localName(row.getResource("unit")),
-                        literal(row, "unitName"),
+                        localName(row.getResource("fromUnit")),
+                        literal(row, "fromUnitName"),
+                        localName(row.getResource("toUnit")),
+                        literal(row, "toUnitName"),
                         optionalLocalName(row, "request"),
                         literal(row, "loanedAt"),
                         literal(row, "returnedAt")

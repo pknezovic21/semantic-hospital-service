@@ -45,9 +45,15 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
             Property hasEquipmentStatus = property("hasEquipmentStatus");
             Property hasRequestStatus = property("hasRequestStatus");
             Property assignedTo = property("assignedTo");
+            Property locatedIn = property("locatedIn");
 
             requireType(model, equipment, "Equipment", "Equipment was not found.");
             requireUnit(model, loanedTo);
+            Resource loanedFrom = requiredResource(model, equipment, assignedTo, "Equipment assignment is incomplete.");
+            Resource loanedFromLocation = optionalResource(model, equipment, locatedIn);
+            if (loanedFrom.equals(loanedTo)) {
+                throw new IllegalArgumentException("Equipment is already assigned to the loan unit.");
+            }
             if (request == null) {
                 requireAvailable(model, equipment);
             } else {
@@ -58,9 +64,13 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
                     .addLiteral(property("name"), loanNumber)
                     .addLiteral(property("loanNumber"), loanNumber)
                     .addProperty(property("loanedEquipment"), equipment)
+                    .addProperty(property("loanedFrom"), loanedFrom)
                     .addProperty(property("loanedTo"), loanedTo)
                     .addLiteral(property("loanedAt"), model.createTypedLiteral(loanedAt, XSDDatatype.XSDdateTime));
 
+            if (loanedFromLocation != null) {
+                loan.addProperty(property("loanedFromLocation"), loanedFromLocation);
+            }
             if (request != null) {
                 loan.addProperty(property("loanedForRequest"), request);
             }
@@ -69,6 +79,7 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
             model.add(equipment, hasEquipmentStatus, loaned);
             model.removeAll(equipment, assignedTo, null);
             model.add(equipment, assignedTo, loanedTo);
+            model.removeAll(equipment, locatedIn, null);
             if (request != null) {
                 model.removeAll(request, hasRequestStatus, null);
                 model.add(request, hasRequestStatus, fulfilled);
@@ -81,20 +92,33 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
         Txn.executeWrite(dataset, () -> {
             Model model = dataset.getDefaultModel();
             Resource loan = resource(loanId);
-            Resource equipment = model.getProperty(loan, property("loanedEquipment")).getResource();
-            Resource available = resource("Available");
-            Resource equipmentLibrary = resource("MedicalEquipmentLibrary");
             Property hasEquipmentStatus = property("hasEquipmentStatus");
             Property assignedTo = property("assignedTo");
+            Property locatedIn = property("locatedIn");
 
             requireType(model, loan, "EquipmentLoan", "Equipment loan was not found.");
             requireOpenLoan(model, loan);
+            Resource equipment = requiredResource(
+                    model,
+                    loan,
+                    property("loanedEquipment"),
+                    "Equipment loan is incomplete."
+            );
+            Resource loanedFrom = requiredResource(model, loan, property("loanedFrom"), "Equipment loan is incomplete.");
+            Resource loanedFromLocation = optionalResource(model, loan, property("loanedFromLocation"));
+            Resource restoredStatus = hasOpenMaintenance(model, equipment)
+                    ? resource("InMaintenance")
+                    : resource("Available");
 
             model.add(loan, property("returnedAt"), model.createTypedLiteral(returnedAt, XSDDatatype.XSDdateTime));
             model.removeAll(equipment, hasEquipmentStatus, null);
-            model.add(equipment, hasEquipmentStatus, available);
+            model.add(equipment, hasEquipmentStatus, restoredStatus);
             model.removeAll(equipment, assignedTo, null);
-            model.add(equipment, assignedTo, equipmentLibrary);
+            model.add(equipment, assignedTo, loanedFrom);
+            model.removeAll(equipment, locatedIn, null);
+            if (loanedFromLocation != null) {
+                model.add(equipment, locatedIn, loanedFromLocation);
+            }
         });
     }
 
@@ -154,6 +178,37 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
         if (model.contains(loan, property("returnedAt"))) {
             throw new IllegalArgumentException("Equipment loan is already returned.");
         }
+    }
+
+    private boolean hasOpenMaintenance(Model model, Resource equipment) {
+        ParameterizedSparqlString query = new ParameterizedSparqlString("""
+                PREFIX hospital: <%s>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+
+                ASK {
+                  ?record rdf:type hospital:MaintenanceRecord ;
+                          hospital:maintenanceFor ?equipment .
+                  FILTER NOT EXISTS { ?record hospital:completedAt ?completedAt . }
+                }
+                """.formatted(baseUri));
+        query.setIri("equipment", equipment.getURI());
+        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+            return execution.execAsk();
+        }
+    }
+
+    private Resource requiredResource(Model model, Resource subject, Property predicate, String message) {
+        Resource value = optionalResource(model, subject, predicate);
+        if (value == null) {
+            throw new IllegalArgumentException(message);
+        }
+        return value;
+    }
+
+    private Resource optionalResource(Model model, Resource subject, Property predicate) {
+        return model.contains(subject, predicate)
+                ? model.getProperty(subject, predicate).getResource()
+                : null;
     }
 
     private Resource resource(String name) {
