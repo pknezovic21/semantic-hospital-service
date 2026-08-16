@@ -38,7 +38,8 @@ public class JenaHospitalRequestWriter implements HospitalRequestWriter {
                     .addLiteral(property("name"), requestNumber)
                     .addLiteral(property("requestNumber"), requestNumber)
                     .addProperty(property("requestedFor"), requestedFor)
-                    .addProperty(property("requestsType"), requestedType);
+                    .addProperty(property("requestsType"), requestedType)
+                    .addProperty(property("hasRequestStatus"), resource("Open"));
         });
     }
 

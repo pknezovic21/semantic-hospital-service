@@ -22,6 +22,7 @@ public class JenaHospitalReasoner {
         String rulesText = """
                 [availableCandidate:
                   (?request <%2$s> <%1$sEquipmentRequest>)
+                  (?request <%1$shasRequestStatus> <%1$sOpen>)
                   (?request <%1$srequestsType> ?type)
                   (?equipment <%1$shasEquipmentType> ?type)
                   (?equipment <%1$shasEquipmentStatus> <%1$sAvailable>)
@@ -75,7 +76,8 @@ public class JenaHospitalReasoner {
                   ?request rdf:type hospital:PurchaseNeededRequest .
                 }
                 WHERE {
-                  ?request rdf:type hospital:EquipmentRequest .
+                  ?request rdf:type hospital:EquipmentRequest ;
+                           hospital:hasRequestStatus hospital:Open .
                   FILTER NOT EXISTS { ?request hospital:availableCandidate ?candidate . }
                 }
                 """.formatted(baseUri);

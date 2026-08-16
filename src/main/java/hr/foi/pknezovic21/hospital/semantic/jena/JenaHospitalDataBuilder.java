@@ -395,7 +395,8 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
         return individual(model, id, "EquipmentRequest", requestNumber)
                 .addLiteral(property("requestNumber"), requestNumber)
                 .addProperty(property("requestedFor"), requestedFor)
-                .addProperty(property("requestsType"), requestsType);
+                .addProperty(property("requestsType"), requestsType)
+                .addProperty(property("hasRequestStatus"), resource("Open"));
     }
 
     private Resource maintenanceRecord(

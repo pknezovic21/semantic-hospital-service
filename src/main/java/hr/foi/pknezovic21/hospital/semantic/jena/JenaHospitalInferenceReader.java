@@ -88,11 +88,12 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
     public List<EquipmentRequestSummary> equipmentRequests() {
         String query = prefixes + """
 
-                SELECT ?request ?requestNumber ?unit ?unitName ?type ?typeName ?candidate ?candidateName
+                SELECT ?request ?requestNumber ?status ?unit ?unitName ?type ?typeName ?candidate ?candidateName
                        ?purchaseNeeded ?highPriority
                 WHERE {
                   ?request rdf:type hospital:EquipmentRequest ;
                            hospital:requestNumber ?requestNumber ;
+                           hospital:hasRequestStatus ?status ;
                            hospital:requestedFor ?unit ;
                            hospital:requestsType ?type .
                   ?unit hospital:name ?unitName .
@@ -116,6 +117,7 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                     requests.add(new EquipmentRequestSummary(
                             localName(row.getResource("request")),
                             literal(row, "requestNumber"),
+                            localName(row.getResource("status")),
                             localName(row.getResource("unit")),
                             literal(row, "unitName"),
                             localName(row.getResource("type")),

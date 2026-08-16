@@ -4,6 +4,8 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLoanWriter;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.query.Dataset;
+import org.apache.jena.query.ParameterizedSparqlString;
+import org.apache.jena.query.QueryExecution;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
@@ -17,10 +19,16 @@ import org.springframework.stereotype.Component;
 public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWriter {
 
     private final Dataset dataset;
+    private final JenaHospitalReasoner reasoner;
     private final String baseUri;
 
-    public JenaHospitalEquipmentLoanWriter(Dataset dataset, @Value("${hospital.rdf.base-uri}") String baseUri) {
+    public JenaHospitalEquipmentLoanWriter(
+            Dataset dataset,
+            JenaHospitalReasoner reasoner,
+            @Value("${hospital.rdf.base-uri}") String baseUri
+    ) {
         this.dataset = dataset;
+        this.reasoner = reasoner;
         this.baseUri = baseUri;
     }
 
@@ -33,13 +41,18 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
             Resource loanedTo = resource(form.loanedToUnitId());
             Resource request = form.requestId() == null ? null : resource(form.requestId());
             Resource loaned = resource("Loaned");
+            Resource fulfilled = resource("Fulfilled");
             Property hasEquipmentStatus = property("hasEquipmentStatus");
+            Property hasRequestStatus = property("hasRequestStatus");
             Property assignedTo = property("assignedTo");
 
             requireType(model, equipment, "Equipment", "Equipment was not found.");
             requireUnit(model, loanedTo);
-            requireAvailable(model, equipment);
-            requireRequest(model, request, equipment, loanedTo);
+            if (request == null) {
+                requireAvailable(model, equipment);
+            } else {
+                requireRequest(model, request, equipment, loanedTo);
+            }
 
             loan.addProperty(RDF.type, resource("EquipmentLoan"))
                     .addLiteral(property("name"), loanNumber)
@@ -56,6 +69,10 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
             model.add(equipment, hasEquipmentStatus, loaned);
             model.removeAll(equipment, assignedTo, null);
             model.add(equipment, assignedTo, loanedTo);
+            if (request != null) {
+                model.removeAll(request, hasRequestStatus, null);
+                model.add(request, hasRequestStatus, fulfilled);
+            }
         });
     }
 
@@ -102,14 +119,34 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
     }
 
     private void requireRequest(Model model, Resource request, Resource equipment, Resource loanedTo) {
-        if (request == null) {
-            return;
-        }
         requireType(model, request, "EquipmentRequest", "Equipment request was not found.");
-        Resource equipmentType = model.getProperty(equipment, property("hasEquipmentType")).getResource();
-        if (!model.contains(request, property("requestedFor"), loanedTo)
-                || !model.contains(request, property("requestsType"), equipmentType)) {
+        requireOpenRequest(model, request);
+        if (!model.contains(request, property("requestedFor"), loanedTo)) {
             throw new IllegalArgumentException("Equipment does not match the request.");
+        }
+        requireAvailableCandidate(model, request, equipment);
+    }
+
+    private void requireAvailableCandidate(Model model, Resource request, Resource equipment) {
+        ParameterizedSparqlString query = new ParameterizedSparqlString("""
+                PREFIX hospital: <%s>
+
+                ASK {
+                  ?request hospital:availableCandidate ?equipment .
+                }
+                """.formatted(baseUri));
+        query.setIri("request", request.getURI());
+        query.setIri("equipment", equipment.getURI());
+        try (QueryExecution execution = QueryExecution.model(reasoner.create(model)).query(query.toString()).build()) {
+            if (!execution.execAsk()) {
+                throw new IllegalArgumentException("Equipment is not an available candidate for the request.");
+            }
+        }
+    }
+
+    private void requireOpenRequest(Model model, Resource request) {
+        if (!model.contains(request, property("hasRequestStatus"), resource("Open"))) {
+            throw new IllegalArgumentException("Equipment request is not open.");
         }
     }
 
