@@ -24,8 +24,11 @@ public class JenaHospitalReasoner {
                   (?request <%2$s> <%1$sEquipmentRequest>)
                   (?request <%1$shasRequestStatus> <%1$sOpen>)
                   (?request <%1$srequestsType> ?type)
+                  (?request <%1$srequestedFor> ?requestedFor)
                   (?equipment <%1$shasEquipmentType> ?type)
                   (?equipment <%1$shasEquipmentStatus> <%1$sAvailable>)
+                  (?equipment <%1$sassignedTo> ?assignedTo)
+                  notEqual(?assignedTo, ?requestedFor)
                   ->
                   (?request <%1$savailableCandidate> ?equipment)
                 ]
@@ -52,15 +55,13 @@ public class JenaHospitalReasoner {
                 ]
                 [highPriorityEmergencyMaintenance:
                   (?record <%2$s> <%1$sMaintenanceRecord>)
-                  (?record <%1$smaintenanceFor> ?equipment)
-                  (?equipment <%1$sassignedTo> <%1$sEmergencyDepartment>)
+                  (?record <%1$smaintenanceReportedFor> <%1$sEmergencyDepartment>)
                   ->
                   (?record <%2$s> <%1$sHighPriorityMaintenanceRecord>)
                 ]
                 [highPriorityCriticalCareMaintenance:
                   (?record <%2$s> <%1$sMaintenanceRecord>)
-                  (?record <%1$smaintenanceFor> ?equipment)
-                  (?equipment <%1$sassignedTo> <%1$sCriticalCareUnit>)
+                  (?record <%1$smaintenanceReportedFor> <%1$sCriticalCareUnit>)
                   ->
                   (?record <%2$s> <%1$sHighPriorityMaintenanceRecord>)
                 ]

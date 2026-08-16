@@ -9,14 +9,12 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
-import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestForm;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
-import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLoanWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
@@ -35,7 +33,6 @@ public class HospitalService {
     private final HospitalKnowledgeReader knowledgeReader;
     private final HospitalInferenceReader inferenceReader;
     private final HospitalRequestWriter requestWriter;
-    private final HospitalEquipmentWriter equipmentWriter;
     private final HospitalEquipmentLoanWriter equipmentLoanWriter;
     private final HospitalMaintenanceWriter maintenanceWriter;
     private final HospitalPurchaseRequestWriter purchaseRequestWriter;
@@ -44,7 +41,6 @@ public class HospitalService {
             HospitalKnowledgeReader knowledgeReader,
             HospitalInferenceReader inferenceReader,
             HospitalRequestWriter requestWriter,
-            HospitalEquipmentWriter equipmentWriter,
             HospitalEquipmentLoanWriter equipmentLoanWriter,
             HospitalMaintenanceWriter maintenanceWriter,
             HospitalPurchaseRequestWriter purchaseRequestWriter
@@ -52,7 +48,6 @@ public class HospitalService {
         this.knowledgeReader = knowledgeReader;
         this.inferenceReader = inferenceReader;
         this.requestWriter = requestWriter;
-        this.equipmentWriter = equipmentWriter;
         this.equipmentLoanWriter = equipmentLoanWriter;
         this.maintenanceWriter = maintenanceWriter;
         this.purchaseRequestWriter = purchaseRequestWriter;
@@ -99,15 +94,6 @@ public class HospitalService {
         String requestNumber = "REQ-" + suffix;
         requestWriter.addEquipmentRequest(id, requestNumber, form);
         return id;
-    }
-
-    public void changeEquipmentStatus(String equipmentId, EquipmentStatusForm form) {
-        requireText(equipmentId, "Equipment is required.");
-        if (form == null) {
-            throw new IllegalArgumentException("Equipment status is required.");
-        }
-        requireText(form.statusId(), "Equipment status is required.");
-        equipmentWriter.changeEquipmentStatus(equipmentId.trim(), form.statusId().trim());
     }
 
     public List<EquipmentLoanSummary> equipmentLoans() {

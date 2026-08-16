@@ -1,5 +1,7 @@
 package hr.foi.pknezovic21.hospital.domain;
 
+import java.util.List;
+
 public record EquipmentRequestSummary(
         String id,
         String requestNumber,
@@ -8,8 +10,7 @@ public record EquipmentRequestSummary(
         String requestedForUnitName,
         String requestedTypeId,
         String requestedTypeName,
-        String candidateEquipmentId,
-        String candidateEquipmentName,
+        List<EquipmentCandidateSummary> candidates,
         boolean purchaseNeeded,
         boolean highPriority
 ) {

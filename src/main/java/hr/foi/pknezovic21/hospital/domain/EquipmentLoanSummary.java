@@ -6,6 +6,8 @@ public record EquipmentLoanSummary(
         String equipmentId,
         String equipmentName,
         String assetNumber,
+        String loanedFromUnitId,
+        String loanedFromUnitName,
         String loanedToUnitId,
         String loanedToUnitName,
         String requestId,

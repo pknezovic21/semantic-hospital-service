@@ -9,7 +9,6 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
-import hr.foi.pknezovic21.hospital.domain.EquipmentStatusForm;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
@@ -70,12 +69,6 @@ public class HospitalRestController {
     @GetMapping("/equipment-management")
     public EquipmentManagement equipmentManagement() {
         return hospitalService.equipmentManagement();
-    }
-
-    @PatchMapping("/equipment/{id}/status")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void changeEquipmentStatus(@PathVariable String id, @RequestBody EquipmentStatusForm form) {
-        hospitalService.changeEquipmentStatus(id, form);
     }
 
     @GetMapping("/requests")

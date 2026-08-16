@@ -211,7 +211,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Patient monitor",
                 "MON-001",
                 patientMonitorType,
-                medicine,
+                criticalCare,
                 criticalCareWard,
                 maintenanceContract,
                 resource("Available")
@@ -410,6 +410,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
         return individual(model, id, "MaintenanceRecord", maintenanceNumber)
                 .addLiteral(property("maintenanceNumber"), maintenanceNumber)
                 .addProperty(property("maintenanceFor"), equipment)
+                .addProperty(property("maintenanceReportedFor"), equipment.getProperty(property("assignedTo")).getResource())
                 .addLiteral(property("maintenanceReason"), reason)
                 .addLiteral(property("reportedAt"), model.createTypedLiteral(reportedAt, XSDDatatype.XSDdateTime));
     }

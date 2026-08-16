@@ -109,9 +109,12 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "purchaseRequestedFor", "Purchase requested for", purchaseRequest, unit);
         objectProperty(model, "purchaseRequestsType", "Purchase requests type", purchaseRequest, equipmentType);
         objectProperty(model, "loanedEquipment", "Loaned equipment", equipmentLoan, equipment);
+        objectProperty(model, "loanedFrom", "Loaned from", equipmentLoan, unit);
+        objectProperty(model, "loanedFromLocation", "Loaned from location", equipmentLoan, location);
         objectProperty(model, "loanedTo", "Loaned to", equipmentLoan, unit);
         objectProperty(model, "loanedForRequest", "Loaned for request", equipmentLoan, equipmentRequest);
         objectProperty(model, "maintenanceFor", "Maintenance for", maintenanceRecord, equipment);
+        objectProperty(model, "maintenanceReportedFor", "Maintenance reported for", maintenanceRecord, unit);
 
         OntDataRange.Named string = model.createDatatype(XSD.xstring.getURI());
         OntDataRange.Named dateTime = model.createDatatype(XSD.dateTime.getURI());
@@ -131,6 +134,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         dataProperty(model, "maintenanceNumber", "Maintenance number", maintenanceRecord, string);
         dataProperty(model, "maintenanceReason", "Maintenance reason", maintenanceRecord, string);
         dataProperty(model, "reportedAt", "Reported at", maintenanceRecord, dateTime);
+        dataProperty(model, "completedAt", "Completed at", maintenanceRecord, dateTime);
 
         individual(model, "Available", "Available", equipmentStatus);
         individual(model, "InMaintenance", "In maintenance", equipmentStatus);
