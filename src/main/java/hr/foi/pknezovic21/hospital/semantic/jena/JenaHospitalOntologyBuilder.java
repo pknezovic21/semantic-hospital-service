@@ -79,6 +79,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         OntClass.Named equipmentRequest = ontClass(model, "EquipmentRequest", "Equipment request");
         ontClass(model, "PurchaseNeededRequest", "Purchase needed request", equipmentRequest);
         ontClass(model, "HighPriorityRequest", "High priority request", equipmentRequest);
+        OntClass.Named equipmentRequestStatus = ontClass(model, "EquipmentRequestStatus", "Equipment request status");
         OntClass.Named purchaseRequest = ontClass(model, "PurchaseRequest", "Purchase request");
         OntClass.Named equipmentLoan = ontClass(model, "EquipmentLoan", "Equipment loan");
         OntClass.Named maintenanceRecord = ontClass(model, "MaintenanceRecord", "Maintenance record");
@@ -102,6 +103,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "contractedSupplier", "Contracted supplier", contract, supplier);
         objectProperty(model, "requestsType", "Requests type", equipmentRequest, equipmentType);
         objectProperty(model, "requestedFor", "Requested for", equipmentRequest, unit);
+        objectProperty(model, "hasRequestStatus", "Has request status", equipmentRequest, equipmentRequestStatus);
         objectProperty(model, "availableCandidate", "Available candidate", equipmentRequest, equipment);
         objectProperty(model, "purchaseForRequest", "Purchase for request", purchaseRequest, equipmentRequest);
         objectProperty(model, "purchaseRequestedFor", "Purchase requested for", purchaseRequest, unit);
@@ -133,6 +135,9 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         individual(model, "Available", "Available", equipmentStatus);
         individual(model, "InMaintenance", "In maintenance", equipmentStatus);
         individual(model, "Loaned", "Loaned", equipmentStatus);
+        individual(model, "Open", "Open", equipmentRequestStatus);
+        individual(model, "Fulfilled", "Fulfilled", equipmentRequestStatus);
+        individual(model, "PurchasePending", "Purchase pending", equipmentRequestStatus);
     }
 
     private OntClass.Named ontClass(OntModel model, String name, String label) {
