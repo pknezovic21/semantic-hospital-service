@@ -7,6 +7,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
+import hr.foi.pknezovic21.hospital.domain.EquipmentReport;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
@@ -135,6 +136,10 @@ public class HospitalService {
         return knowledgeReader.hospitalOverview();
     }
 
+    public EquipmentReport equipmentReport() {
+        return knowledgeReader.equipmentReport();
+    }
+
     public String createMaintenanceRecord(MaintenanceRecordForm form) {
         if (form == null) {
             throw new IllegalArgumentException("Maintenance record is required.");
@@ -147,6 +152,11 @@ public class HospitalService {
         MaintenanceRecordForm cleanForm = new MaintenanceRecordForm(form.equipmentId().trim(), form.reason().trim());
         maintenanceWriter.addMaintenanceRecord(id, maintenanceNumber, Instant.now().toString(), cleanForm);
         return id;
+    }
+
+    public void completeMaintenanceRecord(String maintenanceId) {
+        requireText(maintenanceId, "Maintenance record is required.");
+        maintenanceWriter.completeMaintenanceRecord(maintenanceId.trim(), Instant.now().toString());
     }
 
     public String createPurchaseRequest(PurchaseRequestForm form) {

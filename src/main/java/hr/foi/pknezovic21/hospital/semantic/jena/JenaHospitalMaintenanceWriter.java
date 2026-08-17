@@ -11,6 +11,9 @@ import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.system.Txn;
+import org.apache.jena.update.UpdateExecution;
+import org.apache.jena.update.UpdateFactory;
+import org.apache.jena.update.UpdateRequest;
 import org.apache.jena.vocabulary.RDF;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -56,6 +59,51 @@ public class JenaHospitalMaintenanceWriter implements HospitalMaintenanceWriter 
 
             model.removeAll(equipment, hasEquipmentStatus, null);
             model.add(equipment, hasEquipmentStatus, inMaintenance);
+        });
+    }
+
+    @Override
+    public void completeMaintenanceRecord(String id, String completedAt) {
+        Txn.executeWrite(dataset, () -> {
+            Model model = dataset.getDefaultModel();
+            Resource maintenanceRecord = resource(id);
+
+            requireType(model, maintenanceRecord, "MaintenanceRecord", "Maintenance record was not found.");
+            if (model.contains(maintenanceRecord, property("completedAt"))) {
+                throw new IllegalArgumentException("Maintenance record is already completed.");
+            }
+            Resource equipment = requiredResource(
+                    model,
+                    maintenanceRecord,
+                    property("maintenanceFor"),
+                    "Maintenance record equipment is missing."
+            );
+            if (!model.contains(equipment, property("hasEquipmentStatus"), resource("InMaintenance"))) {
+                throw new IllegalArgumentException("Equipment is not in maintenance.");
+            }
+
+            ParameterizedSparqlString update = new ParameterizedSparqlString("""
+                    PREFIX hospital: <%s>
+
+                    DELETE {
+                      ?equipment hospital:hasEquipmentStatus ?currentStatus .
+                    }
+                    INSERT {
+                      ?record hospital:completedAt ?completedAt .
+                      ?equipment hospital:hasEquipmentStatus hospital:Available .
+                    }
+                    WHERE {
+                      ?record hospital:maintenanceFor ?equipment .
+                      ?equipment hospital:hasEquipmentStatus ?currentStatus .
+                      FILTER NOT EXISTS { ?record hospital:completedAt ?existingCompletedAt . }
+                    }
+                    """.formatted(baseUri));
+            update.setIri("record", maintenanceRecord.getURI());
+            update.setIri("equipment", equipment.getURI());
+            update.setLiteral("completedAt", completedAt, XSDDatatype.XSDdateTime);
+
+            UpdateRequest request = UpdateFactory.create(update.toString());
+            UpdateExecution.model(model).update(request).execute();
         });
     }
 

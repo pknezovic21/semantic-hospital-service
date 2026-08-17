@@ -8,6 +8,8 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentManagementContract;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagementLocation;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagementOption;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagementSupplier;
+import hr.foi.pknezovic21.hospital.domain.EquipmentReport;
+import hr.foi.pknezovic21.hospital.domain.EquipmentReportItem;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
@@ -386,6 +388,63 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                         number(row, "maintenanceRecordCount")
                 );
             }
+        });
+    }
+
+    @Override
+    public EquipmentReport equipmentReport() {
+        String query = """
+                PREFIX hospital: <%s>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                SELECT ?dimension ?item ?name (COUNT(DISTINCT ?equipment) AS ?count)
+                WHERE {
+                  ?equipment rdf:type hospital:Equipment .
+                  {
+                    VALUES (?dimension ?property) {
+                      ("status" hospital:hasEquipmentStatus)
+                      ("type" hospital:hasEquipmentType)
+                      ("unit" hospital:assignedTo)
+                    }
+                    ?equipment ?property ?item .
+                  }
+                  UNION
+                  {
+                    BIND("category" AS ?dimension)
+                    ?equipment hospital:hasEquipmentType/hospital:belongsToCategory ?item .
+                  }
+                  OPTIONAL { ?item hospital:name ?domainName . }
+                  OPTIONAL { ?item rdfs:label ?label . }
+                  BIND(COALESCE(?domainName, ?label, STRAFTER(STR(?item), "#")) AS ?name)
+                }
+                GROUP BY ?dimension ?item ?name
+                ORDER BY ?dimension ?name
+                """.formatted(baseUri);
+        return Txn.calculateRead(dataset, () -> {
+            List<EquipmentReportItem> byStatus = new ArrayList<>();
+            List<EquipmentReportItem> byType = new ArrayList<>();
+            List<EquipmentReportItem> byCategory = new ArrayList<>();
+            List<EquipmentReportItem> byUnit = new ArrayList<>();
+            try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
+                ResultSet results = execution.execSelect();
+                while (results.hasNext()) {
+                    QuerySolution row = results.next();
+                    EquipmentReportItem item = new EquipmentReportItem(
+                            localName(row.getResource("item")),
+                            literal(row, "name"),
+                            number(row, "count")
+                    );
+                    switch (literal(row, "dimension")) {
+                        case "status" -> byStatus.add(item);
+                        case "type" -> byType.add(item);
+                        case "category" -> byCategory.add(item);
+                        case "unit" -> byUnit.add(item);
+                        default -> throw new IllegalStateException("Unsupported equipment report dimension.");
+                    }
+                }
+            }
+            return new EquipmentReport(byStatus, byType, byCategory, byUnit);
         });
     }
 

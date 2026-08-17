@@ -5,6 +5,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
+import hr.foi.pknezovic21.hospital.domain.EquipmentReport;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRiskSummary;
@@ -110,6 +111,12 @@ public class HospitalRestController {
         return ResponseEntity.created(URI.create("/api/maintenance/" + id)).body(new CreatedResourceResponse(id));
     }
 
+    @PatchMapping("/maintenance/{id}/complete")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void completeMaintenanceRecord(@PathVariable String id) {
+        hospitalService.completeMaintenanceRecord(id);
+    }
+
     @GetMapping("/purchase-requests")
     public List<PurchaseRequestSummary> purchaseRequests() {
         return hospitalService.purchaseRequests();
@@ -124,6 +131,11 @@ public class HospitalRestController {
     @GetMapping("/hospital/overview")
     public HospitalOverview hospitalOverview() {
         return hospitalService.hospitalOverview();
+    }
+
+    @GetMapping("/reports/equipment")
+    public EquipmentReport equipmentReport() {
+        return hospitalService.equipmentReport();
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
