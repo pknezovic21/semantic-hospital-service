@@ -5,4 +5,6 @@ import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 public interface HospitalMaintenanceWriter {
 
     void addMaintenanceRecord(String id, String maintenanceNumber, String reportedAt, MaintenanceRecordForm form);
+
+    void completeMaintenanceRecord(String id, String completedAt);
 }
