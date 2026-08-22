@@ -44,10 +44,12 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         model.setNsPrefix("xsd", XSD.NS);
         model.setID(uri("HospitalOrganizationOntology"));
 
-        OntClass.Named hospital = ontClass(model, "Hospital", "Hospital");
-        OntClass.Named unit = ontClass(model, "Unit", "Organization unit");
+        OntClass.Named organizationComponent = ontClass(model, "OrganizationComponent", "Organization component");
+        OntClass.Named hospital = ontClass(model, "Hospital", "Hospital", organizationComponent);
+        OntClass.Named unit = ontClass(model, "Unit", "Organization unit", organizationComponent);
         ontClass(model, "ClinicalDivision", "Clinical division", unit);
         ontClass(model, "Department", "Department", unit);
+        ontClass(model, "ClinicalServiceUnit", "Clinical service unit", unit);
         ontClass(model, "EquipmentShortageUnit", "Equipment shortage unit", unit);
         OntClass.Named equipment = ontClass(model, "Equipment", "Equipment");
         OntClass.Named medicalEquipment = ontClass(model, "MedicalEquipment", "Medical equipment", equipment);
@@ -55,6 +57,8 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         ontClass(model, "MonitoringEquipment", "Monitoring equipment", medicalEquipment);
         ontClass(model, "DiagnosticEquipment", "Diagnostic equipment", medicalEquipment);
         ontClass(model, "MobilityEquipment", "Mobility equipment", medicalEquipment);
+        ontClass(model, "RespiratoryEquipment", "Respiratory equipment", medicalEquipment);
+        ontClass(model, "ResuscitationEquipment", "Resuscitation equipment", medicalEquipment);
         ontClass(model, "HighRiskEquipment", "High risk equipment", equipment);
         OntClass.Named equipmentType = ontClass(model, "EquipmentType", "Equipment type");
         OntClass.Named equipmentCategory = ontClass(model, "EquipmentCategory", "Equipment category");
@@ -62,6 +66,9 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         ontClass(model, "InfusionCategory", "Infusion category", medicalDeviceCategory);
         ontClass(model, "MonitoringCategory", "Monitoring category", medicalDeviceCategory);
         ontClass(model, "DiagnosticCategory", "Diagnostic category", medicalDeviceCategory);
+        ontClass(model, "MobilityCategory", "Mobility category", medicalDeviceCategory);
+        ontClass(model, "RespiratoryCategory", "Respiratory category", medicalDeviceCategory);
+        ontClass(model, "EmergencyCategory", "Emergency category", medicalDeviceCategory);
         OntClass.Named location = ontClass(model, "Location", "Location");
         OntClass.Named clinicalLocation = ontClass(model, "ClinicalLocation", "Clinical location", location);
         ontClass(model, "Ward", "Ward", clinicalLocation);
@@ -70,7 +77,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         ontClass(model, "EquipmentStore", "Equipment store", storageLocation);
         ontClass(model, "DepartmentStore", "Department store", storageLocation);
         OntClass.Named supplier = ontClass(model, "Supplier", "Supplier");
-        ontClass(model, "EquipmentSupplier", "Equipment supplier", supplier);
+        OntClass.Named equipmentSupplier = ontClass(model, "EquipmentSupplier", "Equipment supplier", supplier);
         ontClass(model, "ServiceSupplier", "Service supplier", supplier);
         OntClass.Named contract = ontClass(model, "Contract", "Contract");
         ontClass(model, "MaintenanceContract", "Maintenance contract", contract);
@@ -89,8 +96,8 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         hospital.addDisjointClass(unit);
         unit.addDisjointClass(equipment);
 
-        objectProperty(model, "hasPart", "Has part", hospital, unit);
-        objectProperty(model, "partOf", "Part of", unit, hospital);
+        objectProperty(model, "hasPart", "Has part", organizationComponent, unit);
+        objectProperty(model, "partOf", "Part of", unit, organizationComponent);
         objectProperty(model, "managedBy", "Managed by", unit, staffMember);
         objectProperty(model, "assignedTo", "Assigned to", equipment, unit);
         objectProperty(model, "locatedIn", "Located in", equipment, location);
@@ -98,7 +105,8 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "hasEquipmentType", "Has equipment type", equipment, equipmentType);
         objectProperty(model, "servesUnit", "Serves unit", location, unit);
         objectProperty(model, "belongsToCategory", "Belongs to category", equipmentType, equipmentCategory);
-        objectProperty(model, "suppliedBy", "Supplied by", equipmentType, supplier);
+        objectProperty(model, "suppliedBy", "Supplied by", equipmentType, equipmentSupplier);
+        objectProperty(model, "providedBy", "Provided by", equipment, equipmentSupplier);
         objectProperty(model, "coveredByContract", "Covered by contract", equipment, contract);
         objectProperty(model, "contractedSupplier", "Contracted supplier", contract, supplier);
         objectProperty(model, "requestsType", "Requests type", equipmentRequest, equipmentType);
@@ -108,10 +116,13 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "purchaseForRequest", "Purchase for request", purchaseRequest, equipmentRequest);
         objectProperty(model, "purchaseRequestedFor", "Purchase requested for", purchaseRequest, unit);
         objectProperty(model, "purchaseRequestsType", "Purchase requests type", purchaseRequest, equipmentType);
+        objectProperty(model, "selectedSupplier", "Selected supplier", purchaseRequest, equipmentSupplier);
+        objectProperty(model, "receivedEquipment", "Received equipment", purchaseRequest, equipment);
         objectProperty(model, "loanedEquipment", "Loaned equipment", equipmentLoan, equipment);
         objectProperty(model, "loanedFrom", "Loaned from", equipmentLoan, unit);
         objectProperty(model, "loanedFromLocation", "Loaned from location", equipmentLoan, location);
         objectProperty(model, "loanedTo", "Loaned to", equipmentLoan, unit);
+        objectProperty(model, "loanedToLocation", "Loaned to location", equipmentLoan, location);
         objectProperty(model, "loanedForRequest", "Loaned for request", equipmentLoan, equipmentRequest);
         objectProperty(model, "maintenanceFor", "Maintenance for", maintenanceRecord, equipment);
         objectProperty(model, "maintenanceReportedFor", "Maintenance reported for", maintenanceRecord, unit);
@@ -125,9 +136,13 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         dataProperty(model, "supplierCode", "Supplier code", supplier, string);
         dataProperty(model, "contractNumber", "Contract number", contract, string);
         dataProperty(model, "requestNumber", "Request number", equipmentRequest, string);
+        dataProperty(model, "requestReason", "Request reason", equipmentRequest, string);
+        dataProperty(model, "requestedAt", "Requested at", equipmentRequest, dateTime);
         dataProperty(model, "purchaseNumber", "Purchase number", purchaseRequest, string);
         dataProperty(model, "purchaseReason", "Purchase reason", purchaseRequest, string);
         dataProperty(model, "createdAt", "Created at", purchaseRequest, dateTime);
+        dataProperty(model, "receivedAt", "Received at", purchaseRequest, dateTime);
+        dataProperty(model, "cancelledAt", "Cancelled at", model.getOWLThing(), dateTime);
         dataProperty(model, "loanNumber", "Loan number", equipmentLoan, string);
         dataProperty(model, "loanedAt", "Loaned at", equipmentLoan, dateTime);
         dataProperty(model, "returnedAt", "Returned at", equipmentLoan, dateTime);
@@ -142,6 +157,7 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         individual(model, "Open", "Open", equipmentRequestStatus);
         individual(model, "Fulfilled", "Fulfilled", equipmentRequestStatus);
         individual(model, "PurchasePending", "Purchase pending", equipmentRequestStatus);
+        individual(model, "Cancelled", "Cancelled", equipmentRequestStatus);
     }
 
     private OntClass.Named ontClass(OntModel model, String name, String label) {

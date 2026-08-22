@@ -8,8 +8,12 @@ public record EquipmentLoanSummary(
         String assetNumber,
         String loanedFromUnitId,
         String loanedFromUnitName,
+        String loanedFromLocationId,
+        String loanedFromLocationName,
         String loanedToUnitId,
         String loanedToUnitName,
+        String loanedToLocationId,
+        String loanedToLocationName,
         String requestId,
         String loanedAt,
         String returnedAt

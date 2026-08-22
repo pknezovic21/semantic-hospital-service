@@ -43,6 +43,7 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
         this.prefixes = """
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
                 """.formatted(baseUri);
     }
 
@@ -52,16 +53,10 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
 
                 SELECT ?unit ?name ?type ?parent ?equipmentShortage
                 WHERE {
-                  ?unit hospital:name ?name .
-                  FILTER EXISTS {
-                    ?unit rdf:type ?unitType .
-                    FILTER (?unitType IN (hospital:Hospital, hospital:ClinicalDivision, hospital:Department))
-                  }
-                  BIND(IF(EXISTS { ?unit rdf:type hospital:Department },
-                          hospital:Department,
-                          IF(EXISTS { ?unit rdf:type hospital:ClinicalDivision },
-                             hospital:ClinicalDivision,
-                             hospital:Hospital)) AS ?type)
+                  ?unit hospital:name ?name ;
+                        rdf:type ?type .
+                  ?type rdfs:subClassOf* hospital:OrganizationComponent .
+                  FILTER (?type NOT IN (hospital:OrganizationComponent, hospital:Unit, hospital:EquipmentShortageUnit))
                   OPTIONAL { ?unit hospital:partOf ?parent . }
                   BIND(EXISTS { ?unit rdf:type hospital:EquipmentShortageUnit } AS ?equipmentShortage)
                 }
@@ -271,7 +266,7 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                         ?location hospital:name ?locationName .
                       }
                       OPTIONAL {
-                        ?equipmentType hospital:suppliedBy ?supplier .
+                        ?equipment hospital:providedBy ?supplier .
                         ?supplier hospital:name ?supplierName .
                       }
                       OPTIONAL {
@@ -365,7 +360,8 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
         ParameterizedSparqlString query = new ParameterizedSparqlString(prefixes + """
 
                 SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber
-                       ?fromUnit ?fromUnitName ?toUnit ?toUnitName ?request ?loanedAt ?returnedAt
+                       ?fromUnit ?fromUnitName ?fromLocation ?fromLocationName
+                       ?toUnit ?toUnitName ?toLocation ?toLocationName ?request ?loanedAt ?returnedAt
                 WHERE {
                   ?loan rdf:type hospital:EquipmentLoan ;
                         hospital:loanNumber ?loanNumber ;
@@ -377,6 +373,14 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                              hospital:assetNumber ?assetNumber .
                   ?fromUnit hospital:name ?fromUnitName .
                   ?toUnit hospital:name ?toUnitName .
+                  OPTIONAL {
+                    ?loan hospital:loanedFromLocation ?fromLocation .
+                    ?fromLocation hospital:name ?fromLocationName .
+                  }
+                  OPTIONAL {
+                    ?loan hospital:loanedToLocation ?toLocation .
+                    ?toLocation hospital:name ?toLocationName .
+                  }
                   OPTIONAL { ?loan hospital:loanedForRequest ?request . }
                   OPTIONAL { ?loan hospital:returnedAt ?returnedAt . }
                   FILTER (?equipment = ?equipmentFilter)
@@ -397,8 +401,12 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                         literal(row, "assetNumber"),
                         localName(row.getResource("fromUnit")),
                         literal(row, "fromUnitName"),
+                        optionalLocalName(row, "fromLocation"),
+                        literal(row, "fromLocationName"),
                         localName(row.getResource("toUnit")),
                         literal(row, "toUnitName"),
+                        optionalLocalName(row, "toLocation"),
+                        literal(row, "toLocationName"),
                         optionalLocalName(row, "request"),
                         literal(row, "loanedAt"),
                         literal(row, "returnedAt")

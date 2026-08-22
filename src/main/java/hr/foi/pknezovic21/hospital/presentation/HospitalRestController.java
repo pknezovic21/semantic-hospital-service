@@ -14,6 +14,7 @@ import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestForm;
+import hr.foi.pknezovic21.hospital.domain.PurchaseReceiptForm;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.service.HospitalService;
@@ -126,6 +127,22 @@ public class HospitalRestController {
     public ResponseEntity<CreatedResourceResponse> createPurchaseRequest(@RequestBody PurchaseRequestForm form) {
         String id = hospitalService.createPurchaseRequest(form);
         return ResponseEntity.created(URI.create("/api/purchase-requests/" + id)).body(new CreatedResourceResponse(id));
+    }
+
+    @PostMapping("/purchase-requests/{id}/receive")
+    public ResponseEntity<CreatedResourceResponse> receivePurchaseRequest(
+            @PathVariable String id,
+            @RequestBody PurchaseReceiptForm form
+    ) {
+        String equipmentId = hospitalService.receivePurchaseRequest(id, form);
+        return ResponseEntity.created(URI.create("/api/equipment/" + equipmentId))
+                .body(new CreatedResourceResponse(equipmentId));
+    }
+
+    @PatchMapping("/purchase-requests/{id}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelPurchaseRequest(@PathVariable String id) {
+        hospitalService.cancelPurchaseRequest(id);
     }
 
     @GetMapping("/hospital/overview")
