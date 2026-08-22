@@ -39,6 +39,7 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
             Resource loan = model.createResource(uri(id));
             Resource equipment = resource(form.equipmentId());
             Resource loanedTo = resource(form.loanedToUnitId());
+            Resource loanedToLocation = resource(form.loanedToLocationId());
             Resource request = form.requestId() == null ? null : resource(form.requestId());
             Resource loaned = resource("Loaned");
             Resource fulfilled = resource("Fulfilled");
@@ -49,6 +50,7 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
 
             requireType(model, equipment, "Equipment", "Equipment was not found.");
             requireUnit(model, loanedTo);
+            requireLocationForUnit(model, loanedToLocation, loanedTo);
             Resource loanedFrom = requiredResource(model, equipment, assignedTo, "Equipment assignment is incomplete.");
             Resource loanedFromLocation = optionalResource(model, equipment, locatedIn);
             if (loanedFrom.equals(loanedTo)) {
@@ -66,6 +68,7 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
                     .addProperty(property("loanedEquipment"), equipment)
                     .addProperty(property("loanedFrom"), loanedFrom)
                     .addProperty(property("loanedTo"), loanedTo)
+                    .addProperty(property("loanedToLocation"), loanedToLocation)
                     .addLiteral(property("loanedAt"), model.createTypedLiteral(loanedAt, XSDDatatype.XSDdateTime));
 
             if (loanedFromLocation != null) {
@@ -80,6 +83,7 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
             model.removeAll(equipment, assignedTo, null);
             model.add(equipment, assignedTo, loanedTo);
             model.removeAll(equipment, locatedIn, null);
+            model.add(equipment, locatedIn, loanedToLocation);
             if (request != null) {
                 model.removeAll(request, hasRequestStatus, null);
                 model.add(request, hasRequestStatus, fulfilled);
@@ -129,10 +133,37 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
     }
 
     private void requireUnit(Model model, Resource resource) {
-        if (!model.contains(resource, RDF.type, resource("Hospital"))
-                && !model.contains(resource, RDF.type, resource("ClinicalDivision"))
-                && !model.contains(resource, RDF.type, resource("Department"))) {
-            throw new IllegalArgumentException("Loan unit was not found.");
+        ParameterizedSparqlString query = new ParameterizedSparqlString("""
+                PREFIX hospital: <%s>
+                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+                ASK {
+                  ?unit rdf:type/rdfs:subClassOf* hospital:Unit .
+                }
+                """.formatted(baseUri));
+        query.setIri("unit", resource.getURI());
+        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+            if (!execution.execAsk()) {
+                throw new IllegalArgumentException("Loan unit was not found.");
+            }
+        }
+    }
+
+    private void requireLocationForUnit(Model model, Resource location, Resource unit) {
+        ParameterizedSparqlString query = new ParameterizedSparqlString("""
+                PREFIX hospital: <%s>
+
+                ASK {
+                  ?location hospital:servesUnit/hospital:partOf* ?unit .
+                }
+                """.formatted(baseUri));
+        query.setIri("location", location.getURI());
+        query.setIri("unit", unit.getURI());
+        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+            if (!execution.execAsk()) {
+                throw new IllegalArgumentException("Loan location does not belong to the loan unit.");
+            }
         }
     }
 

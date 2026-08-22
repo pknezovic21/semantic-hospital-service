@@ -17,7 +17,9 @@ import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.QueryExecution;
@@ -45,12 +47,14 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
         String query = """
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
                 SELECT ?unit ?name ?type ?parent
                 WHERE {
-                  ?unit hospital:name ?name .
-                  ?unit rdf:type ?type .
-                  FILTER (?type IN (hospital:Hospital, hospital:ClinicalDivision, hospital:Department))
+                  ?unit hospital:name ?name ;
+                        rdf:type ?type .
+                  ?type rdfs:subClassOf* hospital:OrganizationComponent .
+                  FILTER (?type NOT IN (hospital:OrganizationComponent, hospital:Unit, hospital:EquipmentShortageUnit))
                   OPTIONAL { ?unit hospital:partOf ?parent . }
                 }
                 ORDER BY ?name
@@ -145,14 +149,15 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                         PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
                         PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-                        SELECT ?supplier ?name ?type ?supplierCode
+                        SELECT ?supplier ?name ?type ?supplierCode ?equipmentType
                         WHERE {
                           ?supplier rdf:type ?type ;
                                     hospital:name ?name ;
                                     hospital:supplierCode ?supplierCode .
                           ?type rdfs:subClassOf* hospital:Supplier .
+                          OPTIONAL { ?equipmentType hospital:suppliedBy ?supplier . }
                         }
-                        ORDER BY ?name
+                        ORDER BY ?name ?equipmentType
                         """.formatted(baseUri)),
                 maintenanceContracts("""
                         PREFIX hospital: <%s>
@@ -182,7 +187,8 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
                 SELECT ?loan ?loanNumber ?equipment ?equipmentName ?assetNumber
-                       ?fromUnit ?fromUnitName ?toUnit ?toUnitName ?request ?loanedAt ?returnedAt
+                       ?fromUnit ?fromUnitName ?fromLocation ?fromLocationName
+                       ?toUnit ?toUnitName ?toLocation ?toLocationName ?request ?loanedAt ?returnedAt
                 WHERE {
                   ?loan rdf:type hospital:EquipmentLoan ;
                         hospital:loanNumber ?loanNumber ;
@@ -194,6 +200,14 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                              hospital:assetNumber ?assetNumber .
                   ?fromUnit hospital:name ?fromUnitName .
                   ?toUnit hospital:name ?toUnitName .
+                  OPTIONAL {
+                    ?loan hospital:loanedFromLocation ?fromLocation .
+                    ?fromLocation hospital:name ?fromLocationName .
+                  }
+                  OPTIONAL {
+                    ?loan hospital:loanedToLocation ?toLocation .
+                    ?toLocation hospital:name ?toLocationName .
+                  }
                   OPTIONAL { ?loan hospital:loanedForRequest ?request . }
                   OPTIONAL { ?loan hospital:returnedAt ?returnedAt . }
                 }
@@ -213,8 +227,12 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                             literal(row, "assetNumber"),
                             localName(row.getResource("fromUnit")),
                             literal(row, "fromUnitName"),
+                            optionalLocalName(row, "fromLocation"),
+                            literal(row, "fromLocationName"),
                             localName(row.getResource("toUnit")),
                             literal(row, "toUnitName"),
+                            optionalLocalName(row, "toLocation"),
+                            literal(row, "toLocationName"),
                             optionalLocalName(row, "request"),
                             literal(row, "loanedAt"),
                             literal(row, "returnedAt")
@@ -278,7 +296,9 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 
-                SELECT ?purchaseRequest ?purchaseNumber ?equipmentRequest ?unit ?unitName ?type ?typeName ?reason ?createdAt
+                SELECT ?purchaseRequest ?purchaseNumber ?status ?equipmentRequest ?unit ?unitName ?type ?typeName
+                       ?supplier ?supplierName ?reason ?createdAt ?receivedEquipment ?receivedEquipmentName
+                       ?receivedAssetNumber ?receivedAt ?cancelledAt
                 WHERE {
                   ?purchaseRequest rdf:type hospital:PurchaseRequest ;
                                    hospital:purchaseNumber ?purchaseNumber ;
@@ -289,6 +309,21 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                                    hospital:createdAt ?createdAt .
                   ?unit hospital:name ?unitName .
                   ?type hospital:name ?typeName .
+                  OPTIONAL {
+                    ?purchaseRequest hospital:selectedSupplier ?supplier .
+                    ?supplier hospital:name ?supplierName .
+                  }
+                  OPTIONAL {
+                    ?purchaseRequest hospital:receivedEquipment ?receivedEquipment ;
+                                     hospital:receivedAt ?receivedAt .
+                    ?receivedEquipment hospital:name ?receivedEquipmentName ;
+                                       hospital:assetNumber ?receivedAssetNumber .
+                  }
+                  OPTIONAL { ?purchaseRequest hospital:cancelledAt ?cancelledAt . }
+                  BIND(
+                    IF(BOUND(?receivedAt), "Received", IF(BOUND(?cancelledAt), "Cancelled", "Pending"))
+                    AS ?status
+                  )
                 }
                 ORDER BY DESC(?createdAt)
                 """.formatted(baseUri);
@@ -301,13 +336,21 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                     requests.add(new PurchaseRequestSummary(
                             localName(row.getResource("purchaseRequest")),
                             literal(row, "purchaseNumber"),
+                            literal(row, "status"),
                             localName(row.getResource("equipmentRequest")),
                             localName(row.getResource("unit")),
                             literal(row, "unitName"),
                             localName(row.getResource("type")),
                             literal(row, "typeName"),
+                            optionalLocalName(row, "supplier"),
+                            literal(row, "supplierName"),
                             literal(row, "reason"),
-                            literal(row, "createdAt")
+                            literal(row, "createdAt"),
+                            optionalLocalName(row, "receivedEquipment"),
+                            literal(row, "receivedEquipmentName"),
+                            literal(row, "receivedAssetNumber"),
+                            literal(row, "receivedAt"),
+                            literal(row, "cancelledAt")
                     ));
                 }
             }
@@ -320,6 +363,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
         String query = """
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
                 SELECT ?organizationUnitCount ?equipmentCount ?availableEquipmentCount
                        ?inMaintenanceEquipmentCount ?loanedEquipmentCount ?requestCount
@@ -328,8 +372,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                   {
                     SELECT (COUNT(DISTINCT ?unit) AS ?organizationUnitCount)
                     WHERE {
-                      ?unit rdf:type ?type .
-                      FILTER (?type IN (hospital:Hospital, hospital:ClinicalDivision, hospital:Department))
+                      ?unit rdf:type/rdfs:subClassOf* hospital:OrganizationComponent .
                     }
                   }
                   { SELECT (COUNT(DISTINCT ?equipment) AS ?equipmentCount) WHERE { ?equipment rdf:type hospital:Equipment . } }
@@ -540,20 +583,25 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
     }
 
     private List<EquipmentManagementSupplier> equipmentSuppliers(String query) {
-        List<EquipmentManagementSupplier> items = new ArrayList<>();
+        Map<String, EquipmentManagementSupplier> items = new LinkedHashMap<>();
         try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
             ResultSet results = execution.execSelect();
             while (results.hasNext()) {
                 QuerySolution row = results.next();
-                items.add(new EquipmentManagementSupplier(
-                        localName(row.getResource("supplier")),
+                String supplierId = localName(row.getResource("supplier"));
+                EquipmentManagementSupplier supplier = items.computeIfAbsent(supplierId, ignored -> new EquipmentManagementSupplier(
+                        supplierId,
                         literal(row, "name"),
                         localName(row.getResource("type")),
-                        literal(row, "supplierCode")
+                        literal(row, "supplierCode"),
+                        new ArrayList<>()
                 ));
+                if (row.contains("equipmentType")) {
+                    supplier.supportedTypeIds().add(localName(row.getResource("equipmentType")));
+                }
             }
         }
-        return items;
+        return new ArrayList<>(items.values());
     }
 
     private List<EquipmentManagementOption> equipmentOptions(String query) {

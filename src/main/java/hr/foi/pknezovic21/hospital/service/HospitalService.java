@@ -14,6 +14,7 @@ import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordForm;
 import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestForm;
+import hr.foi.pknezovic21.hospital.domain.PurchaseReceiptForm;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLoanWriter;
@@ -107,12 +108,14 @@ public class HospitalService {
         }
         requireText(form.equipmentId(), "Equipment is required.");
         requireText(form.loanedToUnitId(), "Loan unit is required.");
+        requireText(form.loanedToLocationId(), "Loan location is required.");
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
         String id = "EquipmentLoan-" + suffix;
         String loanNumber = "LOAN-" + suffix;
         EquipmentLoanForm cleanForm = new EquipmentLoanForm(
                 form.equipmentId().trim(),
                 form.loanedToUnitId().trim(),
+                form.loanedToLocationId().trim(),
                 clean(form.requestId())
         );
         equipmentLoanWriter.addEquipmentLoan(id, loanNumber, Instant.now().toString(), cleanForm);
@@ -164,13 +167,42 @@ public class HospitalService {
             throw new IllegalArgumentException("Purchase request is required.");
         }
         requireText(form.equipmentRequestId(), "Equipment request is required.");
+        requireText(form.supplierId(), "Supplier is required.");
         requireText(form.reason(), "Purchase reason is required.");
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
         String id = "PurchaseRequest-" + suffix;
         String purchaseNumber = "PUR-" + suffix;
-        PurchaseRequestForm cleanForm = new PurchaseRequestForm(form.equipmentRequestId().trim(), form.reason().trim());
+        PurchaseRequestForm cleanForm = new PurchaseRequestForm(
+                form.equipmentRequestId().trim(),
+                form.supplierId().trim(),
+                form.reason().trim()
+        );
         purchaseRequestWriter.addPurchaseRequest(id, purchaseNumber, Instant.now().toString(), cleanForm);
         return id;
+    }
+
+    public String receivePurchaseRequest(String purchaseRequestId, PurchaseReceiptForm form) {
+        requireText(purchaseRequestId, "Purchase request is required.");
+        if (form == null) {
+            throw new IllegalArgumentException("Purchase receipt is required.");
+        }
+        requireText(form.locationId(), "Receipt location is required.");
+        String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
+        String equipmentId = "Equipment-" + suffix;
+        String assetNumber = "AST-" + suffix;
+        purchaseRequestWriter.receivePurchaseRequest(
+                purchaseRequestId.trim(),
+                equipmentId,
+                assetNumber,
+                Instant.now().toString(),
+                new PurchaseReceiptForm(form.locationId().trim())
+        );
+        return equipmentId;
+    }
+
+    public void cancelPurchaseRequest(String purchaseRequestId) {
+        requireText(purchaseRequestId, "Purchase request is required.");
+        purchaseRequestWriter.cancelPurchaseRequest(purchaseRequestId.trim(), Instant.now().toString());
     }
 
     private void requireText(String value, String message) {
