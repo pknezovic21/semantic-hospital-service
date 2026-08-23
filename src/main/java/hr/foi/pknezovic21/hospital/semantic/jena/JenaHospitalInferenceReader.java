@@ -86,8 +86,9 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
     public List<EquipmentRequestSummary> equipmentRequests() {
         String query = prefixes + """
 
-                SELECT ?request ?requestNumber ?status ?unit ?unitName ?type ?typeName ?candidate ?candidateName
-                       ?purchaseNeeded ?highPriority
+                SELECT ?request ?requestNumber ?status ?unit ?unitName ?type ?typeName ?reason ?requestedAt ?cancelledAt
+                       ?candidate ?candidateName ?candidateAssetNumber ?candidateUnit ?candidateUnitName
+                       ?candidateLocation ?candidateLocationName ?purchaseNeeded ?highPriority
                 WHERE {
                   ?request rdf:type hospital:EquipmentRequest ;
                            hospital:requestNumber ?requestNumber ;
@@ -96,14 +97,24 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                            hospital:requestsType ?type .
                   ?unit hospital:name ?unitName .
                   ?type hospital:name ?typeName .
+                  OPTIONAL { ?request hospital:requestReason ?reason . }
+                  OPTIONAL { ?request hospital:requestedAt ?requestedAt . }
+                  OPTIONAL { ?request hospital:cancelledAt ?cancelledAt . }
                   OPTIONAL {
                     ?request hospital:availableCandidate ?candidate .
-                    ?candidate hospital:name ?candidateName .
+                    ?candidate hospital:name ?candidateName ;
+                               hospital:assetNumber ?candidateAssetNumber ;
+                               hospital:assignedTo ?candidateUnit .
+                    ?candidateUnit hospital:name ?candidateUnitName .
+                    OPTIONAL {
+                      ?candidate hospital:locatedIn ?candidateLocation .
+                      ?candidateLocation hospital:name ?candidateLocationName .
+                    }
                   }
                   BIND(EXISTS { ?request rdf:type hospital:PurchaseNeededRequest } AS ?purchaseNeeded)
                   BIND(EXISTS { ?request rdf:type hospital:HighPriorityRequest } AS ?highPriority)
                 }
-                ORDER BY ?requestNumber ?candidateName
+                ORDER BY DESC(?requestedAt) ?requestNumber ?candidateName
                 """;
         return Txn.calculateRead(dataset, () -> {
             Map<String, EquipmentRequestSummary> requests = new LinkedHashMap<>();
@@ -122,6 +133,9 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                                     literal(row, "unitName"),
                                     localName(row.getResource("type")),
                                     literal(row, "typeName"),
+                                    literal(row, "reason"),
+                                    literal(row, "requestedAt"),
+                                    literal(row, "cancelledAt"),
                                     new ArrayList<>(),
                                     bool(row, "purchaseNeeded"),
                                     bool(row, "highPriority")
@@ -129,7 +143,12 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                     if (row.contains("candidate")) {
                         request.candidates().add(new EquipmentCandidateSummary(
                                 localName(row.getResource("candidate")),
-                                literal(row, "candidateName")
+                                literal(row, "candidateName"),
+                                literal(row, "candidateAssetNumber"),
+                                localName(row.getResource("candidateUnit")),
+                                literal(row, "candidateUnitName"),
+                                optionalLocalName(row, "candidateLocation"),
+                                literal(row, "candidateLocationName")
                         ));
                     }
                 }
@@ -143,6 +162,9 @@ public class JenaHospitalInferenceReader implements HospitalInferenceReader {
                             request.requestedForUnitName(),
                             request.requestedTypeId(),
                             request.requestedTypeName(),
+                            request.reason(),
+                            request.requestedAt(),
+                            request.cancelledAt(),
                             List.copyOf(request.candidates()),
                             request.purchaseNeeded(),
                             request.highPriority()

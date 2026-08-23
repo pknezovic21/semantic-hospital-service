@@ -6,6 +6,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLocationForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
 import hr.foi.pknezovic21.hospital.domain.EquipmentReport;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
@@ -18,6 +19,7 @@ import hr.foi.pknezovic21.hospital.domain.PurchaseReceiptForm;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
 import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLoanWriter;
+import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLocationWriter;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalInferenceReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalMaintenanceWriter;
@@ -36,6 +38,7 @@ public class HospitalService {
     private final HospitalInferenceReader inferenceReader;
     private final HospitalRequestWriter requestWriter;
     private final HospitalEquipmentLoanWriter equipmentLoanWriter;
+    private final HospitalEquipmentLocationWriter equipmentLocationWriter;
     private final HospitalMaintenanceWriter maintenanceWriter;
     private final HospitalPurchaseRequestWriter purchaseRequestWriter;
 
@@ -44,6 +47,7 @@ public class HospitalService {
             HospitalInferenceReader inferenceReader,
             HospitalRequestWriter requestWriter,
             HospitalEquipmentLoanWriter equipmentLoanWriter,
+            HospitalEquipmentLocationWriter equipmentLocationWriter,
             HospitalMaintenanceWriter maintenanceWriter,
             HospitalPurchaseRequestWriter purchaseRequestWriter
     ) {
@@ -51,6 +55,7 @@ public class HospitalService {
         this.inferenceReader = inferenceReader;
         this.requestWriter = requestWriter;
         this.equipmentLoanWriter = equipmentLoanWriter;
+        this.equipmentLocationWriter = equipmentLocationWriter;
         this.maintenanceWriter = maintenanceWriter;
         this.purchaseRequestWriter = purchaseRequestWriter;
     }
@@ -73,6 +78,18 @@ public class HospitalService {
         return detail;
     }
 
+    public void updateEquipmentLocation(String equipmentId, EquipmentLocationForm form) {
+        requireText(equipmentId, "Equipment is required.");
+        if (form == null) {
+            throw new IllegalArgumentException("Equipment location is required.");
+        }
+        requireText(form.locationId(), "Location is required.");
+        equipmentLocationWriter.updateEquipmentLocation(
+                equipmentId.trim(),
+                new EquipmentLocationForm(form.locationId().trim())
+        );
+    }
+
     public EquipmentManagement equipmentManagement() {
         return knowledgeReader.equipmentManagement();
     }
@@ -91,11 +108,22 @@ public class HospitalService {
         }
         requireText(form.requestedForUnitId(), "Requested unit is required.");
         requireText(form.requestedTypeId(), "Requested equipment type is required.");
+        requireText(form.reason(), "Request reason is required.");
         String suffix = UUID.randomUUID().toString().substring(0, 8).toUpperCase(Locale.ROOT);
         String id = "EquipmentRequest-" + suffix;
         String requestNumber = "REQ-" + suffix;
-        requestWriter.addEquipmentRequest(id, requestNumber, form);
+        EquipmentRequestForm cleanForm = new EquipmentRequestForm(
+                form.requestedForUnitId().trim(),
+                form.requestedTypeId().trim(),
+                form.reason().trim()
+        );
+        requestWriter.addEquipmentRequest(id, requestNumber, Instant.now().toString(), cleanForm);
         return id;
+    }
+
+    public void cancelEquipmentRequest(String requestId) {
+        requireText(requestId, "Equipment request is required.");
+        requestWriter.cancelEquipmentRequest(requestId.trim(), Instant.now().toString());
     }
 
     public List<EquipmentLoanSummary> equipmentLoans() {

@@ -10,6 +10,9 @@ public record EquipmentRequestSummary(
         String requestedForUnitName,
         String requestedTypeId,
         String requestedTypeName,
+        String reason,
+        String requestedAt,
+        String cancelledAt,
         List<EquipmentCandidateSummary> candidates,
         boolean purchaseNeeded,
         boolean highPriority

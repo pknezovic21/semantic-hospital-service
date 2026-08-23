@@ -2,9 +2,11 @@ package hr.foi.pknezovic21.hospital.semantic.jena;
 
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalEquipmentLoanWriter;
+import org.apache.jena.arq.querybuilder.AskBuilder;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ParameterizedSparqlString;
+import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
@@ -12,6 +14,7 @@ import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.system.Txn;
 import org.apache.jena.vocabulary.RDF;
+import org.apache.jena.vocabulary.RDFS;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -133,17 +136,12 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
     }
 
     private void requireUnit(Model model, Resource resource) {
-        ParameterizedSparqlString query = new ParameterizedSparqlString("""
-                PREFIX hospital: <%s>
-                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-                ASK {
-                  ?unit rdf:type/rdfs:subClassOf* hospital:Unit .
-                }
-                """.formatted(baseUri));
-        query.setIri("unit", resource.getURI());
-        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+        Query query = new AskBuilder()
+                .addPrefix("rdf", RDF.getURI())
+                .addPrefix("rdfs", RDFS.getURI())
+                .addWhere(resource, "rdf:type/rdfs:subClassOf*", resource("Unit"))
+                .build();
+        try (QueryExecution execution = QueryExecution.model(model).query(query).build()) {
             if (!execution.execAsk()) {
                 throw new IllegalArgumentException("Loan unit was not found.");
             }
@@ -151,16 +149,11 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
     }
 
     private void requireLocationForUnit(Model model, Resource location, Resource unit) {
-        ParameterizedSparqlString query = new ParameterizedSparqlString("""
-                PREFIX hospital: <%s>
-
-                ASK {
-                  ?location hospital:servesUnit/hospital:partOf* ?unit .
-                }
-                """.formatted(baseUri));
-        query.setIri("location", location.getURI());
-        query.setIri("unit", unit.getURI());
-        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+        Query query = new AskBuilder()
+                .addPrefix("hospital", baseUri)
+                .addWhere(location, "hospital:servesUnit/hospital:partOf*", unit)
+                .build();
+        try (QueryExecution execution = QueryExecution.model(model).query(query).build()) {
             if (!execution.execAsk()) {
                 throw new IllegalArgumentException("Loan location does not belong to the loan unit.");
             }
@@ -183,16 +176,10 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
     }
 
     private void requireAvailableCandidate(Model model, Resource request, Resource equipment) {
-        ParameterizedSparqlString query = new ParameterizedSparqlString("""
-                PREFIX hospital: <%s>
-
-                ASK {
-                  ?request hospital:availableCandidate ?equipment .
-                }
-                """.formatted(baseUri));
-        query.setIri("request", request.getURI());
-        query.setIri("equipment", equipment.getURI());
-        try (QueryExecution execution = QueryExecution.model(reasoner.create(model)).query(query.toString()).build()) {
+        Query query = new AskBuilder()
+                .addWhere(request, property("availableCandidate"), equipment)
+                .build();
+        try (QueryExecution execution = QueryExecution.model(reasoner.create(model)).query(query).build()) {
             if (!execution.execAsk()) {
                 throw new IllegalArgumentException("Equipment is not an available candidate for the request.");
             }

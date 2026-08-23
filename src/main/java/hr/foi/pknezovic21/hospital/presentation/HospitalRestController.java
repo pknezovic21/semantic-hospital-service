@@ -4,6 +4,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentDetail;
 import hr.foi.pknezovic21.hospital.domain.EquipmentFilter;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentLoanSummary;
+import hr.foi.pknezovic21.hospital.domain.EquipmentLocationForm;
 import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
 import hr.foi.pknezovic21.hospital.domain.EquipmentReport;
 import hr.foi.pknezovic21.hospital.domain.EquipmentRequestForm;
@@ -68,6 +69,12 @@ public class HospitalRestController {
         return hospitalService.equipmentDetail(id);
     }
 
+    @PatchMapping("/equipment/{id}/location")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateEquipmentLocation(@PathVariable String id, @RequestBody EquipmentLocationForm form) {
+        hospitalService.updateEquipmentLocation(id, form);
+    }
+
     @GetMapping("/equipment-management")
     public EquipmentManagement equipmentManagement() {
         return hospitalService.equipmentManagement();
@@ -82,6 +89,12 @@ public class HospitalRestController {
     public ResponseEntity<CreatedResourceResponse> createRequest(@RequestBody EquipmentRequestForm form) {
         String id = hospitalService.createEquipmentRequest(form);
         return ResponseEntity.created(URI.create("/api/requests/" + id)).body(new CreatedResourceResponse(id));
+    }
+
+    @PatchMapping("/requests/{id}/cancel")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancelRequest(@PathVariable String id) {
+        hospitalService.cancelEquipmentRequest(id);
     }
 
     @GetMapping("/loans")
