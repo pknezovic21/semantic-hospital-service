@@ -118,8 +118,15 @@ public class JenaHospitalReasoner {
                   ?unit rdf:type hospital:EquipmentShortageUnit .
                 }
                 WHERE {
-                  ?request rdf:type hospital:PurchaseNeededRequest ;
-                           hospital:requestedFor ?unit .
+                  ?request hospital:requestedFor ?unit .
+                  {
+                    ?request rdf:type hospital:PurchaseNeededRequest .
+                  }
+                  UNION
+                  {
+                    ?request rdf:type hospital:EquipmentRequest ;
+                             hospital:hasRequestStatus hospital:PurchasePending .
+                  }
                 }
                 """.formatted(baseUri);
     }

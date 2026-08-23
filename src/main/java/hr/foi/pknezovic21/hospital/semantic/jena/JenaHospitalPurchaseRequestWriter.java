@@ -3,9 +3,11 @@ package hr.foi.pknezovic21.hospital.semantic.jena;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestForm;
 import hr.foi.pknezovic21.hospital.domain.PurchaseReceiptForm;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalPurchaseRequestWriter;
+import org.apache.jena.arq.querybuilder.AskBuilder;
 import org.apache.jena.datatypes.xsd.XSDDatatype;
 import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ParameterizedSparqlString;
+import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
 import org.apache.jena.rdf.model.Model;
 import org.apache.jena.rdf.model.Property;
@@ -193,16 +195,10 @@ public class JenaHospitalPurchaseRequestWriter implements HospitalPurchaseReques
     }
 
     private void requirePurchaseNeeded(Model model, Resource equipmentRequest) {
-        ParameterizedSparqlString query = new ParameterizedSparqlString("""
-                PREFIX hospital: <%s>
-                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-                ASK {
-                  ?request rdf:type hospital:PurchaseNeededRequest .
-                }
-                """.formatted(baseUri));
-        query.setIri("request", equipmentRequest.getURI());
-        try (QueryExecution execution = QueryExecution.model(reasoner.create(model)).query(query.toString()).build()) {
+        Query query = new AskBuilder()
+                .addWhere(equipmentRequest, RDF.type, resource("PurchaseNeededRequest"))
+                .build();
+        try (QueryExecution execution = QueryExecution.model(reasoner.create(model)).query(query).build()) {
             if (!execution.execAsk()) {
                 throw new IllegalArgumentException("Requested equipment is still available.");
             }
@@ -210,16 +206,10 @@ public class JenaHospitalPurchaseRequestWriter implements HospitalPurchaseReques
     }
 
     private void requireSupplierForType(Model model, Resource supplier, Resource equipmentType) {
-        ParameterizedSparqlString query = new ParameterizedSparqlString("""
-                PREFIX hospital: <%s>
-
-                ASK {
-                  ?type hospital:suppliedBy ?supplier .
-                }
-                """.formatted(baseUri));
-        query.setIri("type", equipmentType.getURI());
-        query.setIri("supplier", supplier.getURI());
-        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+        Query query = new AskBuilder()
+                .addWhere(equipmentType, property("suppliedBy"), supplier)
+                .build();
+        try (QueryExecution execution = QueryExecution.model(model).query(query).build()) {
             if (!execution.execAsk()) {
                 throw new IllegalArgumentException("Supplier does not provide the requested equipment type.");
             }
@@ -243,16 +233,11 @@ public class JenaHospitalPurchaseRequestWriter implements HospitalPurchaseReques
     }
 
     private void requireLocationForUnit(Model model, Resource location, Resource unit) {
-        ParameterizedSparqlString query = new ParameterizedSparqlString("""
-                PREFIX hospital: <%s>
-
-                ASK {
-                  ?location hospital:servesUnit/hospital:partOf* ?unit .
-                }
-                """.formatted(baseUri));
-        query.setIri("location", location.getURI());
-        query.setIri("unit", unit.getURI());
-        try (QueryExecution execution = QueryExecution.model(model).query(query.toString()).build()) {
+        Query query = new AskBuilder()
+                .addPrefix("hospital", baseUri)
+                .addWhere(location, "hospital:servesUnit/hospital:partOf*", unit)
+                .build();
+        try (QueryExecution execution = QueryExecution.model(model).query(query).build()) {
             if (!execution.execAsk()) {
                 throw new IllegalArgumentException("Receipt location does not belong to the requested unit.");
             }
