@@ -241,12 +241,13 @@ public class HospitalService {
 
     private EquipmentFilter normalize(EquipmentFilter filter) {
         if (filter == null) {
-            return new EquipmentFilter(null, null, null);
+            return new EquipmentFilter(null, null, null, null);
         }
         return new EquipmentFilter(
                 clean(filter.statusId()),
                 clean(filter.typeId()),
-                clean(filter.unitId())
+                clean(filter.unitId()),
+                clean(filter.search())
         );
     }
 

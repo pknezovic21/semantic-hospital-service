@@ -11,6 +11,7 @@ hospital:
   rdf:
     base-uri: "http://example.org/hospital#"
     storage-path: "data/hospital-tdb2"
+    text-index-path: "data/hospital-text-index"
   fuseki:
     enabled: true
     port: 3030
