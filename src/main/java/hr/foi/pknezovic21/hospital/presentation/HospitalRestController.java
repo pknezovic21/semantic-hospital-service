@@ -54,9 +54,10 @@ public class HospitalRestController {
     public List<EquipmentSummary> equipment(
             @RequestParam(required = false) String status,
             @RequestParam(required = false, name = "type") String typeId,
-            @RequestParam(required = false, name = "unit") String unitId
+            @RequestParam(required = false, name = "unit") String unitId,
+            @RequestParam(required = false) String search
     ) {
-        return hospitalService.equipment(new EquipmentFilter(status, typeId, unitId));
+        return hospitalService.equipment(new EquipmentFilter(status, typeId, unitId, search));
     }
 
     @GetMapping("/equipment/risk")

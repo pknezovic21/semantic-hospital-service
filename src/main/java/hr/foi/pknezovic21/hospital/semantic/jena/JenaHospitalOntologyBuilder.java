@@ -49,7 +49,6 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         OntClass.Named unit = ontClass(model, "Unit", "Organization unit", organizationComponent);
         ontClass(model, "ClinicalDivision", "Clinical division", unit);
         ontClass(model, "Department", "Department", unit);
-        ontClass(model, "ClinicalServiceUnit", "Clinical service unit", unit);
         ontClass(model, "EquipmentShortageUnit", "Equipment shortage unit", unit);
         OntClass.Named equipment = ontClass(model, "Equipment", "Equipment");
         OntClass.Named medicalEquipment = ontClass(model, "MedicalEquipment", "Medical equipment", equipment);

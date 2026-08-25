@@ -47,23 +47,9 @@ public class JenaHospitalReasoner {
                   ->
                   (?request <%2$s> <%1$sHighPriorityRequest>)
                 ]
-                [highPriorityEmergencyUnitRequest:
-                  (?request <%2$s> <%1$sEquipmentRequest>)
-                  (?request <%1$srequestedFor> ?unit)
-                  (?unit <%1$spartOf> <%1$sEmergencyDepartment>)
-                  ->
-                  (?request <%2$s> <%1$sHighPriorityRequest>)
-                ]
                 [highPriorityCriticalCareRequest:
                   (?request <%2$s> <%1$sEquipmentRequest>)
                   (?request <%1$srequestedFor> <%1$sCriticalCareDepartment>)
-                  ->
-                  (?request <%2$s> <%1$sHighPriorityRequest>)
-                ]
-                [highPriorityCriticalCareUnitRequest:
-                  (?request <%2$s> <%1$sEquipmentRequest>)
-                  (?request <%1$srequestedFor> ?unit)
-                  (?unit <%1$spartOf> <%1$sCriticalCareDepartment>)
                   ->
                   (?request <%2$s> <%1$sHighPriorityRequest>)
                 ]
@@ -73,23 +59,9 @@ public class JenaHospitalReasoner {
                   ->
                   (?record <%2$s> <%1$sHighPriorityMaintenanceRecord>)
                 ]
-                [highPriorityEmergencyUnitMaintenance:
-                  (?record <%2$s> <%1$sMaintenanceRecord>)
-                  (?record <%1$smaintenanceReportedFor> ?unit)
-                  (?unit <%1$spartOf> <%1$sEmergencyDepartment>)
-                  ->
-                  (?record <%2$s> <%1$sHighPriorityMaintenanceRecord>)
-                ]
                 [highPriorityCriticalCareMaintenance:
                   (?record <%2$s> <%1$sMaintenanceRecord>)
                   (?record <%1$smaintenanceReportedFor> <%1$sCriticalCareDepartment>)
-                  ->
-                  (?record <%2$s> <%1$sHighPriorityMaintenanceRecord>)
-                ]
-                [highPriorityCriticalCareUnitMaintenance:
-                  (?record <%2$s> <%1$sMaintenanceRecord>)
-                  (?record <%1$smaintenanceReportedFor> ?unit)
-                  (?unit <%1$spartOf> <%1$sCriticalCareDepartment>)
                   ->
                   (?record <%2$s> <%1$sHighPriorityMaintenanceRecord>)
                 ]

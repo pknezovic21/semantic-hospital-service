@@ -40,48 +40,23 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
         Resource surgery = unit(model, hospital, "SurgeryDivision", "ClinicalDivision", "Surgery");
         Resource clinicalSupport = unit(model, hospital, "ClinicalSupportDivision", "ClinicalDivision", "Clinical Support");
         Resource emergency = unit(model, medicine, "EmergencyDepartment", "Department", "Emergency Department");
-        Resource emergencyCare = unit(model, emergency, "EmergencyCareUnit", "ClinicalServiceUnit", "Emergency Care Unit");
-        Resource criticalCareDepartment = unit(
+        Resource criticalCare = unit(
                 model,
                 medicine,
                 "CriticalCareDepartment",
                 "Department",
                 "Critical Care Department"
         );
-        Resource criticalCare = unit(
-                model,
-                criticalCareDepartment,
-                "CriticalCareUnit",
-                "ClinicalServiceUnit",
-                "Critical Care Unit"
-        );
         Resource cardiology = unit(model, medicine, "CardiologyDepartment", "Department", "Cardiology Department");
-        Resource cardiacCare = unit(model, cardiology, "CardiacCareUnit", "ClinicalServiceUnit", "Cardiac Care Unit");
         Resource surgeryDepartment = unit(model, surgery, "SurgeryDepartment", "Department", "Surgery Department");
-        Resource surgeryCare = unit(model, surgeryDepartment, "SurgeryCareUnit", "ClinicalServiceUnit", "Surgery Care Unit");
         Resource orthopaedics = unit(model, surgery, "OrthopaedicsDepartment", "Department", "Orthopaedics Department");
-        Resource orthopaedicCare = unit(
-                model,
-                orthopaedics,
-                "OrthopaedicCareUnit",
-                "ClinicalServiceUnit",
-                "Orthopaedic Care Unit"
-        );
         Resource imaging = unit(model, clinicalSupport, "ImagingDepartment", "Department", "Imaging Department");
-        Resource ultrasound = unit(model, imaging, "UltrasoundUnit", "ClinicalServiceUnit", "Ultrasound Unit");
         Resource rehabilitation = unit(
                 model,
                 clinicalSupport,
                 "RehabilitationDepartment",
                 "Department",
                 "Rehabilitation Department"
-        );
-        Resource mobilityCare = unit(
-                model,
-                rehabilitation,
-                "MobilityCareUnit",
-                "ClinicalServiceUnit",
-                "Mobility Care Unit"
         );
         Resource equipmentLibrary = unit(
                 model,
@@ -260,14 +235,14 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "LOC-MOB"
         );
         equipmentLibraryStore.addProperty(property("servesUnit"), equipmentLibrary);
-        emergencyRoom.addProperty(property("servesUnit"), emergencyCare);
+        emergencyRoom.addProperty(property("servesUnit"), emergency);
         criticalCareWard.addProperty(property("servesUnit"), criticalCare);
-        cardiacWard.addProperty(property("servesUnit"), cardiacCare);
-        cardiacRoom.addProperty(property("servesUnit"), cardiacCare);
-        imagingRoom.addProperty(property("servesUnit"), ultrasound);
-        surgeryRoom.addProperty(property("servesUnit"), surgeryCare);
-        orthopaedicWard.addProperty(property("servesUnit"), orthopaedicCare);
-        mobilityRoom.addProperty(property("servesUnit"), mobilityCare);
+        cardiacWard.addProperty(property("servesUnit"), cardiology);
+        cardiacRoom.addProperty(property("servesUnit"), cardiology);
+        imagingRoom.addProperty(property("servesUnit"), imaging);
+        surgeryRoom.addProperty(property("servesUnit"), surgeryDepartment);
+        orthopaedicWard.addProperty(property("servesUnit"), orthopaedics);
+        mobilityRoom.addProperty(property("servesUnit"), rehabilitation);
         Resource infusionPumpType = equipmentType(
                 model,
                 "InfusionPumpType",
@@ -406,7 +381,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Syringe pump",
                 "SYR-002",
                 syringePumpType,
-                emergencyCare,
+                emergency,
                 emergencyRoom,
                 infusionSupplier,
                 generalMaintenanceContract,
@@ -419,7 +394,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Ultrasound scanner",
                 "US-001",
                 ultrasoundScannerType,
-                ultrasound,
+                imaging,
                 imagingRoom,
                 diagnosticSupplier,
                 diagnosticMaintenanceContract,
@@ -432,7 +407,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "ECG monitor",
                 "ECG-001",
                 ecgMonitorType,
-                cardiacCare,
+                cardiology,
                 cardiacWard,
                 monitoringSupplier,
                 generalMaintenanceContract,
@@ -471,7 +446,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Volumetric infusion pump",
                 "INF-003",
                 infusionPumpType,
-                surgeryCare,
+                surgeryDepartment,
                 surgeryRoom,
                 infusionSupplier,
                 generalMaintenanceContract,
@@ -484,7 +459,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Defibrillator",
                 "DEF-001",
                 defibrillatorType,
-                emergencyCare,
+                emergency,
                 emergencyRoom,
                 monitoringSupplier,
                 generalMaintenanceContract,
@@ -497,7 +472,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Pulse oximeter",
                 "OXI-001",
                 pulseOximeterType,
-                cardiacCare,
+                cardiology,
                 cardiacWard,
                 monitoringSupplier,
                 generalMaintenanceContract,
@@ -523,7 +498,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Wheelchair",
                 "MOB-001",
                 wheelchairType,
-                mobilityCare,
+                rehabilitation,
                 mobilityRoom,
                 generalSupplier,
                 generalMaintenanceContract,
@@ -536,7 +511,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Patient monitor",
                 "MON-003",
                 patientMonitorType,
-                orthopaedicCare,
+                orthopaedics,
                 orthopaedicWard,
                 monitoringSupplier,
                 generalMaintenanceContract,
@@ -546,7 +521,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 model,
                 "EquipmentRequest001",
                 "REQ-001",
-                emergencyCare,
+                emergency,
                 infusionPumpType,
                 "Additional infusion capacity is required.",
                 "2026-08-10T08:30:00Z"
@@ -564,7 +539,7 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 model,
                 "EquipmentRequest003",
                 "REQ-003",
-                mobilityCare,
+                rehabilitation,
                 wheelchairType,
                 "An additional wheelchair is required for patient mobility.",
                 "2026-08-12T10:00:00Z"

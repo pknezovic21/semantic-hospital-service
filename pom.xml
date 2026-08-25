@@ -49,6 +49,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.jena</groupId>
+            <artifactId>jena-text</artifactId>
+            <version>${jena.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.jena</groupId>
             <artifactId>jena-ontapi</artifactId>
             <version>${jena.version}</version>
         </dependency>

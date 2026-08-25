@@ -28,6 +28,7 @@ import org.apache.jena.query.ResultSet;
 import org.apache.jena.rdf.model.Literal;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.system.Txn;
+import org.apache.lucene.queryparser.classic.QueryParserBase;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -496,6 +497,7 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
         ParameterizedSparqlString query = new ParameterizedSparqlString("""
                 PREFIX hospital: <%s>
                 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+                PREFIX text: <http://jena.apache.org/text#>
 
                 SELECT ?equipment ?name ?assetNumber ?equipmentType ?equipmentTypeName ?status ?unit ?unitName
                        ?location ?locationName ?category ?categoryName
@@ -529,6 +531,9 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
         if (filter.unitId() != null) {
             query.setIri("unitFilter", uri(filter.unitId()));
         }
+        if (filter.search() != null) {
+            query.setLiteral("searchFilter", QueryParserBase.escape(filter.search()));
+        }
         return query.toString();
     }
 
@@ -542,6 +547,9 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
         }
         if (filter.unitId() != null) {
             filters.append("  FILTER (?unit = ?unitFilter)\n");
+        }
+        if (filter.search() != null) {
+            filters.append("  ?equipment text:query (hospital:name ?searchFilter) .\n");
         }
         return filters.toString();
     }
