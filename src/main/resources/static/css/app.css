@@ -1,0 +1,108 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+    font-family: sans-serif;
+}
+
+.app-header {
+    padding: 15px 0;
+    border-bottom: 1px solid #000;
+}
+
+.app-header span,
+.app-header nav {
+    display: block;
+    margin-top: 4px;
+}
+
+main > section {
+    margin-bottom: 40px;
+}
+
+.filters,
+.action-form {
+    display: flex;
+    gap: 10px;
+    align-items: end;
+    margin: 15px 0;
+}
+
+.filters label,
+.action-form label {
+    flex: 1;
+}
+
+label span {
+    display: block;
+}
+
+input,
+select {
+    width: 100%;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.overview-tables {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 20px;
+}
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 3fr) 1fr;
+    gap: 20px;
+}
+
+.list {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th,
+td {
+    padding: 6px 10px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid #ccc;
+}
+
+th {
+    border-bottom: 1px solid #000;
+}
+
+#equipment-rows tr:hover {
+    cursor: pointer;
+    background: #eee;
+}
+
+.empty {
+    padding: 30px;
+    text-align: center;
+}
+
+.detail-list dd {
+    margin: 0 0 8px;
+}
+
+.detail form {
+    margin-top: 15px;
+}
+
+.risk,
+.error {
+    color: #c00;
+}

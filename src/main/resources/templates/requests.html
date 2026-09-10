@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Central Hospital | Requests</title>
+    <link rel="stylesheet" href="/css/app.css"/>
+    <script src="/js/app.js" defer></script>
+</head>
+<body data-page="requests">
+<header th:replace="~{fragments/header :: header}"></header>
+<main>
+    <p id="message" class="error" hidden></p>
+    <section>
+        <h1>Equipment requests</h1>
+        <form id="request-form" class="action-form">
+            <label><span>Unit</span><select id="request-unit" required></select></label>
+            <label><span>Type</span><select id="request-type" required></select></label>
+            <label><span>Reason</span><input id="request-reason" required/></label>
+            <button type="submit">Create</button>
+        </form>
+        <div class="list">
+            <table>
+                <thead><tr><th>Request</th><th>Unit</th><th>Type</th><th>Reason</th><th>Status</th><th>Result</th><th></th></tr></thead>
+                <tbody id="request-rows"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h1>Equipment loans</h1>
+        <form id="loan-form" class="action-form">
+            <label><span>Request (optional)</span><select id="loan-request"></select></label>
+            <label><span>Equipment</span><select id="loan-equipment" required></select></label>
+            <label><span>Loan to</span><select id="loan-unit" required></select></label>
+            <label><span>Location</span><select id="loan-location" required></select></label>
+            <button type="submit">Loan</button>
+        </form>
+        <div class="list">
+            <table>
+                <thead><tr><th>Loan</th><th>Equipment</th><th>From</th><th>To</th><th>Loaned at</th><th>Returned at</th><th></th></tr></thead>
+                <tbody id="loan-rows"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h1>Purchase requests</h1>
+        <form id="purchase-form" class="action-form">
+            <label><span>Equipment request</span><select id="purchase-request" required></select></label>
+            <label><span>Supplier</span><select id="purchase-supplier" required></select></label>
+            <label><span>Reason</span><input id="purchase-reason" required/></label>
+            <button type="submit">Purchase</button>
+        </form>
+        <form id="receive-form" class="action-form">
+            <label><span>Pending purchase</span><select id="receive-purchase" required></select></label>
+            <label><span>Receipt location</span><select id="receive-location" required></select></label>
+            <button type="submit">Receive</button>
+        </form>
+        <div class="list">
+            <table>
+                <thead><tr><th>Purchase</th><th>Request</th><th>Unit</th><th>Type</th><th>Supplier</th><th>Status</th><th>Equipment</th><th></th></tr></thead>
+                <tbody id="purchase-rows"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>
