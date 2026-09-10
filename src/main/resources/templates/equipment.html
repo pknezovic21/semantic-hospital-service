@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Central Hospital | Equipment</title>
+    <link rel="stylesheet" href="/css/app.css"/>
+    <script src="/js/app.js" defer></script>
+</head>
+<body data-page="equipment">
+<header th:replace="~{fragments/header :: header}"></header>
+<main>
+    <p id="message" class="error" hidden></p>
+    <section>
+        <h1>Equipment inventory</h1>
+        <p id="result-count">Loading equipment...</p>
+        <form id="filters" class="filters">
+            <label><span>Search</span><input id="search" type="search" placeholder="Equipment name"/></label>
+            <label><span>Status</span><select id="status"><option value="">All statuses</option></select></label>
+            <label><span>Type</span><select id="type"><option value="">All types</option></select></label>
+            <label><span>Unit</span><select id="unit"><option value="">All units</option></select></label>
+            <div class="filter-actions">
+                <button type="submit">Apply</button>
+                <button id="clear-filters" type="button">Clear</button>
+            </div>
+        </form>
+        <div class="workspace">
+            <table>
+                <thead><tr><th>Asset</th><th>Equipment</th><th>Type</th><th>Status</th><th>Unit</th><th>Location</th></tr></thead>
+                <tbody id="equipment-rows"><tr><td colspan="6" class="empty">Loading...</td></tr></tbody>
+            </table>
+            <aside id="equipment-detail" class="detail">
+                <h2>Equipment details</h2>
+                <p>Select an item from the inventory.</p>
+            </aside>
+        </div>
+    </section>
+</main>
+</body>
+</html>

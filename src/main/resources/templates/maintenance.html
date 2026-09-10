@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Central Hospital | Maintenance</title>
+    <link rel="stylesheet" href="/css/app.css"/>
+    <script src="/js/app.js" defer></script>
+</head>
+<body data-page="maintenance">
+<header th:replace="~{fragments/header :: header}"></header>
+<main>
+    <p id="message" class="error" hidden></p>
+    <section>
+        <h1>Maintenance</h1>
+        <form id="maintenance-form" class="action-form">
+            <label><span>Available equipment</span><select id="maintenance-equipment" required></select></label>
+            <label><span>Reason</span><input id="maintenance-reason" required/></label>
+            <button type="submit">Report</button>
+        </form>
+        <div class="list">
+            <table>
+                <thead><tr><th>Record</th><th>Equipment</th><th>Unit</th><th>Reason</th><th>Reported at</th><th>Completed at</th><th>Priority</th><th></th></tr></thead>
+                <tbody id="maintenance-rows"></tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

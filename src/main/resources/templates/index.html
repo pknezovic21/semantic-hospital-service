@@ -2,8 +2,37 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8"/>
-    <title>Hospital</title>
+    <title>Central Hospital | Overview</title>
+    <link rel="stylesheet" href="/css/app.css"/>
+    <script src="/js/app.js" defer></script>
 </head>
-<body>
+<body data-page="overview">
+<header th:replace="~{fragments/header :: header}"></header>
+
+<main>
+    <p id="message" class="error" hidden></p>
+    <section>
+        <h1>Hospital overview</h1>
+        <div class="overview-tables">
+            <div class="list">
+                <table><thead><tr><th>Metric</th><th>Count</th></tr></thead><tbody id="overview-rows"></tbody></table>
+            </div>
+            <div class="list">
+                <table><thead><tr><th>Organization</th><th>Type</th><th>Parent</th><th>Shortage</th></tr></thead><tbody id="organization-rows"></tbody></table>
+            </div>
+        </div>
+
+        <h2>Equipment report</h2>
+        <div class="list">
+            <table><thead><tr><th>Dimension</th><th>Item</th><th>Count</th></tr></thead><tbody id="report-rows"></tbody></table>
+        </div>
+
+        <h2>High-risk equipment</h2>
+        <div class="list">
+            <table><thead><tr><th>Asset</th><th>Equipment</th><th>Type</th><th>Unit</th><th>Maintenance records</th></tr></thead><tbody id="risk-rows"></tbody></table>
+        </div>
+        <p><a href="/api/rdf" target="_blank">Open RDF export</a></p>
+    </section>
+</main>
 </body>
 </html>
