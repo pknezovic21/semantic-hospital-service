@@ -185,6 +185,13 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Emergency room",
                 "LOC-EMR"
         );
+        Resource treatmentRoom = location(
+                model,
+                "EmergencyTreatmentRoom",
+                "ProcedureRoom",
+                "Treatment room",
+                "LOC-EMT"
+        );
         Resource criticalCareWard = location(
                 model,
                 "CriticalCareWard",
@@ -213,12 +220,26 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Imaging room",
                 "LOC-IMG"
         );
+        Resource ultrasoundRoom = location(
+                model,
+                "UltrasoundRoom",
+                "ProcedureRoom",
+                "Ultrasound room",
+                "LOC-USR"
+        );
         Resource surgeryRoom = location(
                 model,
                 "SurgeryRoom",
                 "ProcedureRoom",
                 "Surgery room",
                 "LOC-SUR"
+        );
+        Resource recoveryWard = location(
+                model,
+                "RecoveryWard",
+                "Ward",
+                "Recovery ward",
+                "LOC-RCW"
         );
         Resource orthopaedicWard = location(
                 model,
@@ -234,15 +255,26 @@ public class JenaHospitalDataBuilder implements HospitalDataBuilder {
                 "Mobility room",
                 "LOC-MOB"
         );
+        Resource therapyRoom = location(
+                model,
+                "TherapyRoom",
+                "ProcedureRoom",
+                "Therapy room",
+                "LOC-THR"
+        );
         equipmentLibraryStore.addProperty(property("servesUnit"), equipmentLibrary);
         emergencyRoom.addProperty(property("servesUnit"), emergency);
+        treatmentRoom.addProperty(property("servesUnit"), emergency);
         criticalCareWard.addProperty(property("servesUnit"), criticalCare);
         cardiacWard.addProperty(property("servesUnit"), cardiology);
         cardiacRoom.addProperty(property("servesUnit"), cardiology);
         imagingRoom.addProperty(property("servesUnit"), imaging);
+        ultrasoundRoom.addProperty(property("servesUnit"), imaging);
         surgeryRoom.addProperty(property("servesUnit"), surgeryDepartment);
+        recoveryWard.addProperty(property("servesUnit"), surgeryDepartment);
         orthopaedicWard.addProperty(property("servesUnit"), orthopaedics);
         mobilityRoom.addProperty(property("servesUnit"), rehabilitation);
+        therapyRoom.addProperty(property("servesUnit"), rehabilitation);
         Resource infusionPumpType = equipmentType(
                 model,
                 "InfusionPumpType",

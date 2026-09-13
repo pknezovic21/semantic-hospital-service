@@ -77,10 +77,10 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         ontClass(model, "DepartmentStore", "Department store", storageLocation);
         OntClass.Named supplier = ontClass(model, "Supplier", "Supplier");
         OntClass.Named equipmentSupplier = ontClass(model, "EquipmentSupplier", "Equipment supplier", supplier);
-        ontClass(model, "ServiceSupplier", "Service supplier", supplier);
+        OntClass.Named serviceSupplier = ontClass(model, "ServiceSupplier", "Service supplier", supplier);
         OntClass.Named contract = ontClass(model, "Contract", "Contract");
-        ontClass(model, "MaintenanceContract", "Maintenance contract", contract);
-        ontClass(model, "SupplyContract", "Supply contract", contract);
+        OntClass.Named maintenanceContract = ontClass(model, "MaintenanceContract", "Maintenance contract", contract);
+        OntClass.Named supplyContract = ontClass(model, "SupplyContract", "Supply contract", contract);
         OntClass.Named staffMember = ontClass(model, "StaffMember", "Staff member");
         OntClass.Named equipmentRequest = ontClass(model, "EquipmentRequest", "Equipment request");
         ontClass(model, "PurchaseNeededRequest", "Purchase needed request", equipmentRequest);
@@ -95,19 +95,21 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         hospital.addDisjointClass(unit);
         unit.addDisjointClass(equipment);
 
-        objectProperty(model, "hasPart", "Has part", organizationComponent, unit);
-        objectProperty(model, "partOf", "Part of", unit, organizationComponent);
+        OntObjectProperty.Named hasPart = objectProperty(model, "hasPart", "Has part", organizationComponent, unit);
+        OntObjectProperty.Named partOf = objectProperty(model, "partOf", "Part of", unit, organizationComponent);
+        hasPart.addInverseProperty(partOf);
         objectProperty(model, "managedBy", "Managed by", unit, staffMember);
-        objectProperty(model, "assignedTo", "Assigned to", equipment, unit);
-        objectProperty(model, "locatedIn", "Located in", equipment, location);
-        objectProperty(model, "hasEquipmentStatus", "Has equipment status", equipment, equipmentStatus);
-        objectProperty(model, "hasEquipmentType", "Has equipment type", equipment, equipmentType);
+        OntObjectProperty.Named assignedTo = objectProperty(model, "assignedTo", "Assigned to", equipment, unit);
+        OntObjectProperty.Named locatedIn = objectProperty(model, "locatedIn", "Located in", equipment, location);
+        OntObjectProperty.Named hasEquipmentStatus = objectProperty(model, "hasEquipmentStatus", "Has equipment status", equipment, equipmentStatus);
+        OntObjectProperty.Named hasEquipmentType = objectProperty(model, "hasEquipmentType", "Has equipment type", equipment, equipmentType);
+        locatedIn.setFunctional(true);
         objectProperty(model, "servesUnit", "Serves unit", location, unit);
         objectProperty(model, "belongsToCategory", "Belongs to category", equipmentType, equipmentCategory);
         objectProperty(model, "suppliedBy", "Supplied by", equipmentType, equipmentSupplier);
         objectProperty(model, "providedBy", "Provided by", equipment, equipmentSupplier);
         objectProperty(model, "coveredByContract", "Covered by contract", equipment, contract);
-        objectProperty(model, "contractedSupplier", "Contracted supplier", contract, supplier);
+        OntObjectProperty.Named contractedSupplier = objectProperty(model, "contractedSupplier", "Contracted supplier", contract, supplier);
         objectProperty(model, "requestsType", "Requests type", equipmentRequest, equipmentType);
         objectProperty(model, "requestedFor", "Requested for", equipmentRequest, unit);
         objectProperty(model, "hasRequestStatus", "Has request status", equipmentRequest, equipmentRequestStatus);
@@ -125,6 +127,15 @@ public class JenaHospitalOntologyBuilder implements HospitalOntologyBuilder {
         objectProperty(model, "loanedForRequest", "Loaned for request", equipmentLoan, equipmentRequest);
         objectProperty(model, "maintenanceFor", "Maintenance for", maintenanceRecord, equipment);
         objectProperty(model, "maintenanceReportedFor", "Maintenance reported for", maintenanceRecord, unit);
+
+        if (!model.contains(organizationComponent, OWL.equivalentClass)) {
+            organizationComponent.addEquivalentClass(model.createObjectUnionOf(hospital, unit));
+            equipment.addSuperClass(model.createObjectCardinality(hasEquipmentStatus, 1, equipmentStatus));
+            equipment.addSuperClass(model.createObjectCardinality(hasEquipmentType, 1, equipmentType));
+            equipment.addSuperClass(model.createObjectCardinality(assignedTo, 1, unit));
+            maintenanceContract.addSuperClass(model.createObjectAllValuesFrom(contractedSupplier, serviceSupplier));
+            supplyContract.addSuperClass(model.createObjectAllValuesFrom(contractedSupplier, equipmentSupplier));
+        }
 
         OntDataRange.Named string = model.createDatatype(XSD.xstring.getURI());
         OntDataRange.Named dateTime = model.createDatatype(XSD.dateTime.getURI());

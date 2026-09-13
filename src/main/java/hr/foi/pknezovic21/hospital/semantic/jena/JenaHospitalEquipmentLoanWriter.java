@@ -8,13 +8,14 @@ import org.apache.jena.query.Dataset;
 import org.apache.jena.query.ParameterizedSparqlString;
 import org.apache.jena.query.Query;
 import org.apache.jena.query.QueryExecution;
+import org.apache.jena.rdf.model.InfModel;
 import org.apache.jena.rdf.model.Model;
+import org.apache.jena.rdf.model.ModelFactory;
 import org.apache.jena.rdf.model.Property;
 import org.apache.jena.rdf.model.Resource;
 import org.apache.jena.rdf.model.ResourceFactory;
 import org.apache.jena.system.Txn;
 import org.apache.jena.vocabulary.RDF;
-import org.apache.jena.vocabulary.RDFS;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -52,7 +53,7 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
             Property locatedIn = property("locatedIn");
 
             requireType(model, equipment, "Equipment", "Equipment was not found.");
-            requireUnit(model, loanedTo);
+            requireDepartment(model, loanedTo);
             requireLocationForUnit(model, loanedToLocation, loanedTo);
             Resource loanedFrom = requiredResource(model, equipment, assignedTo, "Equipment assignment is incomplete.");
             Resource loanedFromLocation = optionalResource(model, equipment, locatedIn);
@@ -135,16 +136,10 @@ public class JenaHospitalEquipmentLoanWriter implements HospitalEquipmentLoanWri
         }
     }
 
-    private void requireUnit(Model model, Resource resource) {
-        Query query = new AskBuilder()
-                .addPrefix("rdf", RDF.getURI())
-                .addPrefix("rdfs", RDFS.getURI())
-                .addWhere(resource, "rdf:type/rdfs:subClassOf*", resource("Unit"))
-                .build();
-        try (QueryExecution execution = QueryExecution.model(model).query(query).build()) {
-            if (!execution.execAsk()) {
-                throw new IllegalArgumentException("Loan unit was not found.");
-            }
+    private void requireDepartment(Model model, Resource resource) {
+        InfModel rdfsModel = ModelFactory.createRDFSModel(model);
+        if (!rdfsModel.contains(resource, RDF.type, resource("Department"))) {
+            throw new IllegalArgumentException("Loan department was not found.");
         }
     }
 
