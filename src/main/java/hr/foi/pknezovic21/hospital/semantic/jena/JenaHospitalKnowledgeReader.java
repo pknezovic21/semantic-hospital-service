@@ -12,9 +12,7 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentReport;
 import hr.foi.pknezovic21.hospital.domain.EquipmentReportItem;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
-import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
-import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import hr.foi.pknezovic21.hospital.semantic.api.HospitalKnowledgeReader;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -41,42 +39,6 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
     public JenaHospitalKnowledgeReader(Dataset dataset, @Value("${hospital.rdf.base-uri}") String baseUri) {
         this.dataset = dataset;
         this.baseUri = baseUri;
-    }
-
-    @Override
-    public List<UnitSummary> organizationUnits() {
-        String query = """
-                PREFIX hospital: <%s>
-                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-
-                SELECT ?unit ?name ?type ?parent
-                WHERE {
-                  ?unit hospital:name ?name ;
-                        rdf:type ?type .
-                  ?type rdfs:subClassOf* hospital:OrganizationComponent .
-                  FILTER (?type NOT IN (hospital:OrganizationComponent, hospital:Unit, hospital:EquipmentShortageUnit))
-                  OPTIONAL { ?unit hospital:partOf ?parent . }
-                }
-                ORDER BY ?name
-                """.formatted(baseUri);
-        return Txn.calculateRead(dataset, () -> {
-            List<UnitSummary> units = new ArrayList<>();
-            try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
-                ResultSet results = execution.execSelect();
-                while (results.hasNext()) {
-                    QuerySolution row = results.next();
-                    units.add(new UnitSummary(
-                            localName(row.getResource("unit")),
-                            literal(row, "name"),
-                            localName(row.getResource("type")),
-                            optionalLocalName(row, "parent"),
-                            false
-                    ));
-                }
-            }
-            return units;
-        });
     }
 
     @Override
@@ -241,53 +203,6 @@ public class JenaHospitalKnowledgeReader implements HospitalKnowledgeReader {
                 }
             }
             return loans;
-        });
-    }
-
-    @Override
-    public List<MaintenanceRecordSummary> maintenanceRecords() {
-        String query = """
-                PREFIX hospital: <%s>
-                PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-
-                SELECT ?record ?maintenanceNumber ?equipment ?equipmentName ?assetNumber
-                       ?reportedFor ?reportedForName ?reason ?reportedAt ?completedAt
-                WHERE {
-                  ?record rdf:type hospital:MaintenanceRecord ;
-                          hospital:maintenanceNumber ?maintenanceNumber ;
-                          hospital:maintenanceFor ?equipment ;
-                          hospital:maintenanceReportedFor ?reportedFor ;
-                          hospital:maintenanceReason ?reason ;
-                          hospital:reportedAt ?reportedAt .
-                  ?equipment hospital:name ?equipmentName ;
-                             hospital:assetNumber ?assetNumber .
-                  ?reportedFor hospital:name ?reportedForName .
-                  OPTIONAL { ?record hospital:completedAt ?completedAt . }
-                }
-                ORDER BY DESC(?reportedAt)
-                """.formatted(baseUri);
-        return Txn.calculateRead(dataset, () -> {
-            List<MaintenanceRecordSummary> records = new ArrayList<>();
-            try (QueryExecution execution = QueryExecution.create().dataset(dataset).query(query).build()) {
-                ResultSet results = execution.execSelect();
-                while (results.hasNext()) {
-                    QuerySolution row = results.next();
-                    records.add(new MaintenanceRecordSummary(
-                            localName(row.getResource("record")),
-                            literal(row, "maintenanceNumber"),
-                            localName(row.getResource("equipment")),
-                            literal(row, "equipmentName"),
-                            literal(row, "assetNumber"),
-                            localName(row.getResource("reportedFor")),
-                            literal(row, "reportedForName"),
-                            literal(row, "reason"),
-                            literal(row, "reportedAt"),
-                            literal(row, "completedAt"),
-                            false
-                    ));
-                }
-            }
-            return records;
         });
     }
 

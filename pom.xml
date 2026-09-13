@@ -13,7 +13,7 @@
 
     <groupId>hr.foi.pknezovic21</groupId>
     <artifactId>hospital</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>hospital</name>
 
     <properties>
@@ -73,12 +73,6 @@
             <version>${commons-lang3.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-devtools</artifactId>
-            <scope>runtime</scope>
-            <optional>true</optional>
-        </dependency>
     </dependencies>
 
     <build>

@@ -6,22 +6,16 @@ import hr.foi.pknezovic21.hospital.domain.EquipmentManagement;
 import hr.foi.pknezovic21.hospital.domain.EquipmentReport;
 import hr.foi.pknezovic21.hospital.domain.EquipmentSummary;
 import hr.foi.pknezovic21.hospital.domain.HospitalOverview;
-import hr.foi.pknezovic21.hospital.domain.MaintenanceRecordSummary;
 import hr.foi.pknezovic21.hospital.domain.PurchaseRequestSummary;
-import hr.foi.pknezovic21.hospital.domain.UnitSummary;
 import java.util.List;
 
 public interface HospitalKnowledgeReader {
-
-    List<UnitSummary> organizationUnits();
 
     List<EquipmentSummary> equipment(EquipmentFilter filter);
 
     EquipmentManagement equipmentManagement();
 
     List<EquipmentLoanSummary> equipmentLoans();
-
-    List<MaintenanceRecordSummary> maintenanceRecords();
 
     List<PurchaseRequestSummary> purchaseRequests();
 
