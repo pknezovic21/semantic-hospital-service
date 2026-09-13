@@ -57,8 +57,8 @@ function empty(columns, text) {
     return `<tr><td colspan="${columns}" class="empty">${text}</td></tr>`;
 }
 
-function unitItems() {
-    return organization.filter(unit => unit.type !== "Hospital");
+function departmentItems() {
+    return organization.filter(unit => unit.type === "Department");
 }
 
 function isWithinUnit(childId, parentId) {
@@ -82,10 +82,10 @@ async function loadReferences() {
     if (fields.status) {
         setOptions(fields.status, management.equipmentStatuses, "All statuses");
         setOptions(fields.type, management.equipmentTypes, "All types");
-        setOptions(fields.unit, unitItems().filter(unit => unit.type === "Department"), "All departments");
+        setOptions(fields.unit, departmentItems(), "All departments");
     }
     if ($("#request-unit")) {
-        setOptions($("#request-unit"), unitItems(), "Select unit");
+        setOptions($("#request-unit"), departmentItems(), "Select department");
         setOptions($("#request-type"), management.equipmentTypes, "Select type");
     }
 }
@@ -221,10 +221,10 @@ function updateLoanForm() {
         setOptions($("#loan-equipment"), request.candidates.map(candidate => ({
             id: candidate.equipmentId, name: `${candidate.equipmentName} (${candidate.assetNumber})`
         })), "Select candidate");
-        setOptions($("#loan-unit"), [{id: request.requestedForUnitId, name: request.requestedForUnitName}], "Select unit");
+        setOptions($("#loan-unit"), [{id: request.requestedForUnitId, name: request.requestedForUnitName}], "Select department");
     } else {
         setOptions($("#loan-equipment"), availableEquipment.map(item => ({id: item.id, name: `${item.name} (${item.assetNumber})`})), "Select equipment");
-        setOptions($("#loan-unit"), unitItems(), "Select unit");
+        setOptions($("#loan-unit"), departmentItems(), "Select department");
     }
     updateLoanLocations();
 }
@@ -232,8 +232,8 @@ function updateLoanForm() {
 function updateLoanUnits() {
     if ($("#loan-request").value) return;
     const equipment = availableEquipment.find(item => item.id === $("#loan-equipment").value);
-    const units = equipment ? unitItems().filter(unit => unit.id !== equipment.assignedUnitId) : unitItems();
-    setOptions($("#loan-unit"), units, "Select unit");
+    const departments = equipment ? departmentItems().filter(unit => unit.id !== equipment.assignedUnitId) : departmentItems();
+    setOptions($("#loan-unit"), departments, "Select department");
     updateLoanLocations();
 }
 
